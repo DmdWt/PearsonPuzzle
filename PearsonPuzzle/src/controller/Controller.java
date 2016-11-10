@@ -20,7 +20,6 @@ public abstract class Controller implements java.awt.event.ActionListener {
 		this.view=view;
 	}
 	public void updateView(){
-		
 	}
 	public void editModel(){
 		
@@ -35,7 +34,6 @@ public abstract class Controller implements java.awt.event.ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent arg0) {
 		// TODO Auto-generated method stub
-		
 	}
 	/*
 	List<Model> models;

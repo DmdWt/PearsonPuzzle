@@ -15,10 +15,10 @@ import javax.swing.TransferHandler;
  * @author workspace
  *
  */
-public class ToTransferHandler extends TransferHandler {
+public class ToSaveTransferHandler extends TransferHandler {
 	private static final long serialVersionUID = 1L;
 	int action;
-	public ToTransferHandler(int action) {
+	public ToSaveTransferHandler(int action) {
         this.action = action;
     }
     

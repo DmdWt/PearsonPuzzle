@@ -15,16 +15,18 @@ import controller.Controller;
  *
  */
 public class LoginListener implements ActionListener {
-	String username; 
+	JTextField username; 
 	JPasswordField password;
 	Controller controller;
 
     public LoginListener(JTextField username, JPasswordField password, Controller controller) {
-        this.username = username.getText();
+        this.username = username;
         this.password = password;
         this.controller = controller;
     }
 	public void actionPerformed(ActionEvent e) {
-		controller.login(username, password.getPassword());
+		String usernameString = username.getText();
+		
+		controller.login(username.getText(), password.getPassword());
     }
 }

@@ -17,6 +17,7 @@ public class DefaultController extends Controller{
 	public DefaultController(Model model, LoginView view) {
 		super(model, view);
 		view.addController(this);
+		//view.addActionListener()
 	}
 	public DefaultController(Model model, View view) {
 		super(model, view);

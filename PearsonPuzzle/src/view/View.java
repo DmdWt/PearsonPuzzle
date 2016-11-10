@@ -9,7 +9,7 @@ import controller.Controller;
  * Design Klasse, um Erscheinungsbild der grafischen Oberfläche zu definieren
  * und auf jeweiligen Nutzer einzustellen.
  * 
- * @author wildcut
+ * @author workspace
  *
  */
 

@@ -8,6 +8,8 @@ import view.View;
 
 /**
  * Klasse dient dazu, die GUI zu erzeugen.
+ * Soll später zur Factory werden, um Controller, View und Model zu verknüpfen.
+ * 
  * 
  * @author workspace
  *

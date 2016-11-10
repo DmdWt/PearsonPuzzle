@@ -11,6 +11,7 @@ import javax.swing.JTextField;
 
 import Listener.LoginListener;
 
+import controller.Controller;
 import controller.DefaultController;
 /**
  * Definiert die Login Ansicht, die zugleich als start Screen fungiert.
@@ -41,25 +42,20 @@ public class LoginView extends View{
 		loginPanel.add(password);
 		enter = new JButton("Los gehts");
 		//enter.setActionCommand();
-		loginPanel.add(enter);	
+		loginPanel.add(enter);
 	}
 	// Controller ist dafür zuständig
-	public void addAction(ActionListener controller){
-		enter.addActionListener(controller);
-		username.addActionListener(controller);
-		password.addActionListener(controller);
-	}
-	public char[] getPassword(){
-		return password.getPassword();
-	}
-	public String getUsername(){
-		return username.getText();
-	}
-	public void addController(DefaultController controller) {
-		enter.addActionListener(controller);
+	//public void addActionListener(ActionListener listener){
+		//enter.addActionListener(listener);
+		//enter.addActionListener(controller);
+		//username.addActionListener(controller);
+		//password.addActionListener(controller);
+	//}
+	public void addController(Controller controller) {
+		//enter.addActionListener(controller);
 		enter.addActionListener(new LoginListener(username, password, controller));
-		username.addActionListener(controller);
-		password.addActionListener(controller);
+		//username.addActionListener(controller);
+		//password.addActionListener(controller);
 	}
 	public void quitView(){
 		loginPanel.removeAll();
