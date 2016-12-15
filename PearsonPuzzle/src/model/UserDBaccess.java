@@ -17,6 +17,7 @@ public class UserDBaccess {
 	 public UserDBaccess() throws SQLException {
 		String dbUrl = "jdbc:derby:database;create=true";
 		conn = DriverManager.getConnection(dbUrl);
+		//derby.ui.codeset
 		this.normalDbUsage();
 		}
 	 
@@ -69,9 +70,7 @@ public class UserDBaccess {
 		   } catch(Exception e){
 			   		return false;}
 	   }
-	   
 
-	// ------------------------ Tabellen in Datenbank anlegen (hardcoded) -------------------------------
 
 	   private void normalDbUsage() throws SQLException {
 		   Statement stmt = conn.createStatement();
@@ -123,9 +122,18 @@ public class UserDBaccess {
 	   }
 	   
 	   
-	// ------------------------ Projekt in Datenbank einspeichern -------------------------------
+	 /**
+	 * Speichert das übergebene Projekt in der Datenbank.<br>
+	 * <b>Leere Zeilen werden beim Apspeichern gelöscht.</b>
+	 * 
+	 * @param projectname
+	 * @param codeString
+	 * @param linelength
+	 * @param tab
+	 */
 	   
 	   public void saveProject(String projectname, String codeString, int linelength, int tab) {
+		   // TODO: Linelength umdefinieren (wird nicht zwingend benötigt, übergebene Integer kann aber evtl. Verwendung finden
 		   if(linelength < 1){
 			   linelength = MIN_line_length_Code;
 		   }
@@ -142,34 +150,25 @@ public class UserDBaccess {
 			   return;
 		   }
 		   
-		   String buffer;
+		   // -- Code Array wird erzeugt und wieder zu einem String zusammengefasst
 		   String[] codeStrings=codeString.split("\n");
-			for(int i=codeStrings.length-1; i>0;i--){
-				int randomInt = new java.util.Random().nextInt(i);
-				buffer=codeStrings[randomInt];
-				codeStrings[randomInt]=codeStrings[i];
-				codeStrings[i]=buffer;
-			}
-			StringBuffer stringBuffer= new StringBuffer();
-			for(String line : codeStrings){
-				stringBuffer.append(line);
-			}
-			System.out.println(stringBuffer.toString());
-			
+		   codeString = unite(codeStrings, false, tab);
+		   String randomCode=unite(codeStrings, true, tab);
+		   
 		   try{
 			   Statement stmt = conn.createStatement();
-			   stmt.execute("INSERT INTO Projects VALUES ('"+projectname+"', '"+codeString+"','"+stringBuffer.toString()+"','',0)");
+			   stmt.execute("INSERT INTO Projects VALUES ('"+projectname+"', '"+codeString+"','"+randomCode.toString()+"','',0)");
 		   }
 		   catch(SQLException e){
 			   // Falls der Eintrag schon existiert.
 			   if(e.getSQLState().equals("23505")){
 				   try{
 					   Statement stmt = conn.createStatement();
-					   stmt.execute("UPDATE Projects SET Code='"+codeString+"', randomCode='"+stringBuffer.toString()+"' WHERE pName='"+projectname+"'");
+					   stmt.execute("UPDATE Projects SET Code='"+codeString+"', randomCode='"+randomCode.toString()+"' WHERE pName='"+projectname+"'");
 				   }
 				   catch(SQLException e1){
 					   e1.printStackTrace(); 
-					   //TODO: Auto generated Method stub 
+					   //XXX: Auto generated Method stub 
 					   }
 				   return;
 				   }
@@ -177,6 +176,56 @@ public class UserDBaccess {
 		   }
 	   }
 	   
+	   /**
+	    * Aus dem String[] wird wieder ein String. Dieser wird entweder zufällig zusammengesetzt <br>
+	    * oder aber so wie er im String[] abgespeichert ist. Leerzeichen am Anfang, Leerzeichen <br>
+	    * nach Tabs sowie leere Zeilen werden vor dem Zusammensetzten entfernt-
+	    * <br><br>
+	    * Array mit Strings @param codeStrings<br>
+	    * Zufällige Zusammensetung @param random<br>
+	    * Tabbreite @param tab<br>
+	    * Zusammengesetzter String @return<br>
+	    */
+	   private String unite(String[] codeStrings, boolean random, int tab){
+		   if(random){
+			   String buffer;
+			   for(int i=codeStrings.length-1; i>0;i--){
+					int randomInt = new java.util.Random().nextInt(i);
+					buffer=codeStrings[randomInt];
+					codeStrings[randomInt]=codeStrings[i];
+					codeStrings[i]=buffer;
+				}
+		   }
+		   StringBuffer stringBuffer = new StringBuffer();
+		   for(String line: codeStrings){
+			   if(!line.trim().equals("")){
+				   // trim entfernt auch tabs, deshalb while schleife
+				   line=line.replaceAll("\t ", "\t");
+				   while(line.startsWith(" ")){
+					   line=line.replaceFirst(" ", "");
+				   }
+				   stringBuffer.append(line+"\n");
+			   }
+		   }
+		   return new String(stringBuffer);
+	   }
+	   
+	   public void updateDescription(String projectname, String description){
+		   try{
+			   Statement stmt = conn.createStatement();
+			   stmt.execute("UPDATE Projects SET Description='"+description+"' WHERE pName='"+projectname+"'");
+		   }
+		   catch(SQLException e1){
+			   e1.printStackTrace();
+			   //TODO: Auto generated Method stub 
+			   }
+	   }
+	   
+	   /**
+	    * Projekt umbenennen (wenn der Projektname geändert werden soll)<br>
+	    * Alter Projektname@param oldName
+	    * Neuer Projektname@param newName
+	    */
 	   public void renameProject(String oldName, String newName){
 		   Statement stmt;
 		   try {
@@ -188,8 +237,18 @@ public class UserDBaccess {
 		   }		   
 	   }
 	
-
+	   /**
+	    * Speichert das übergebene Projekt 
+	    * #depricated
+	    * 
+	    * @param codeString
+	    * @param projectname
+	    * @param linelength
+	    * @param projectID
+	    * @throws SQLException
+	    */
 	   public void saveProject(String[] codeString, String projectname, int linelength, final int projectID) throws SQLException{
+		   projectname=new String(projectname.trim());
 		   if(linelength < 1){
 			   linelength =MIN_line_length_Code;
 		   }
@@ -208,12 +267,12 @@ public class UserDBaccess {
 		   try{
 			   stmt.executeUpdate("CREATE TABLE Projects ( Projectname varchar("+length_projectName+") UNIQUE)");
 		   }
-		   catch(Exception e){ //falls Tabelle bereits existiert
+		   catch(Exception e){ //Tabelle existiert bereits
 			   }
 		   
 		   try{stmt.execute("INSERT INTO Projects VALUES ('"+projectname+"')");
 		   }
-		   catch(Exception e){// TODO Projektname bereits vorhanden
+		   catch(Exception e){	//Projektname bereits vorhanden
 		   }
 		   
 		   // ----- Speichert normalen Code
@@ -249,6 +308,18 @@ public class UserDBaccess {
 			//-----------------------------testing------------------------------------
 		   
 	   }
+	   public void saveProjectSettings(String projectname, int tabSize, int grade) {
+		   if(projectname.equals("")){
+			   return;
+		   }
+		   try {
+			   Statement stmt = conn.createStatement();
+			   stmt.executeUpdate("UPDATE Projects SET tabSize="+tabSize+" WHERE pName='"+projectname+"'");
+		   		} catch (SQLException e) {
+		   			// XXX: Auto-generated catch block
+		   			e.printStackTrace();
+		   		}
+		}
 	   
 	   
 	   //-------------------------- Code aus Datenbank auslesen -------------------------------	   
@@ -258,7 +329,7 @@ public class UserDBaccess {
 		   Statement stmt = conn.createStatement();
 		   ResultSet te = stmt.executeQuery("SELECT Code FROM Projects WHERE pName='"+projectname+"'");
 		   te.next();
-		   System.out.println(te.getString("Code"));
+		   //System.out.println(te.getString("Code"));
 		   return te.getString("Code");  
 	   }
 	   public ArrayList <String> getCodeList(String projectname) throws SQLException{
@@ -276,7 +347,14 @@ public class UserDBaccess {
 		   // return codeString;
 		   return codeliste;
 	   }
-	   public ArrayList <String> getProjects() {
+	   
+	   /**
+	    * Holt sich eine Projektliste aus der Datenbank.<br>
+	    * Es könnten Projekte einer bestimmten Klassenstufe <br>
+	    * abgefragt werden (müssen aber nicht).
+	    * ProjektListe@return
+	    */
+	   public ArrayList <String> getProjects(int grade) {
 		   Statement stmt;
 		   ResultSet te;
 		   try {
@@ -291,7 +369,7 @@ public class UserDBaccess {
 		   } catch (SQLException e1) {
 			   try{
 				   this.createTable_Projects();
-				   return this.getProjects();
+				   return this.getProjects(grade);
 			   } catch(SQLException e2){
 				   e2.printStackTrace();
 			   }
@@ -301,6 +379,13 @@ public class UserDBaccess {
 		   // return codeString;
 		   }
 	   	}
+	   
+	   /**
+	    * Liefert zum übergenenen Projektnamen die Projektbeschreibung.
+	    * Projektname@param projectname
+	    * Beschreibung@return
+	    * @throws SQLException
+	    */
 	   public String getProjectDescription(String projectname) throws SQLException{
 		   Statement stmt;
 		   ResultSet te;
@@ -308,7 +393,22 @@ public class UserDBaccess {
 		   te = stmt.executeQuery("SELECT Description FROM Projects WHERE pName='"+projectname+"'");
 		   te.next();
 		   return te.getString("Description");
-	   	}
+	   }
+	   public int getTabSize(String projectname) {
+		   Statement stmt;
+		   ResultSet te;
+		   try {
+			stmt = conn.createStatement();
+			te = stmt.executeQuery("SELECT tabsize FROM Projects WHERE pName='"+projectname+"'");
+			   te.next();
+			   return te.getInt("tabsize");
+		   } catch (SQLException e) {
+			   // TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		   return 0;
+		   
+		}
 	   private void createTable_Projects() throws SQLException{
 		   Statement stmt = conn.createStatement();
 		   // TODO: Allert soll erfolgen, der abfrägt, ob dies das erst Projekt ist, das man erstellt. Erst bei ja soll DROP TABLE erfolgen (sonst werden eventuell vorhandenen DAten verworfen)
@@ -319,13 +419,20 @@ public class UserDBaccess {
 		   		"Code LONG VARCHAR, " +
 		   		"randomCode LONG VARCHAR, " +
 		   		"Description varchar("+length_projectDescription+"), " +
-		   		"tabSize int)");
+		   		"tabSize INT)");
 		   saveProject(
 				"TestProjekt", 
 				"Beispielcode 1 \nBeispielcode2\n\tBeispielcode3\n \t \t \t \t \t\t\t\t\t\t\t\t \tLanger" , 
 				0,
 				0);
 	   }
+	   
+	   
+	   /**
+	    * Schülertabelle wird verworfen, falls vorhanden und neu kreiert.<br>
+	    * <b>!!!ACHTUNG!!!</b> Löscht eventuell vorhanenden Daten!
+	    * @throws SQLException
+	    */
 	   private void createTable_Students() throws SQLException{
 		   Statement stmt = conn.createStatement();
 		   try{stmt.executeUpdate("DROP TABLE students");}
@@ -338,6 +445,12 @@ public class UserDBaccess {
 		   stmt.executeUpdate("insert into students values (1,'tom','tom')");
 		   stmt.executeUpdate("insert into students values (2,'peter','peter')");
 	   }
+	   
+	   /**
+	    * Lehrertabelle wird verworfen, falls vorhanden und neu kreiert.<br>
+	    * <b>!!!ACHTUNG!!!</b> Löscht eventuell vorhanenden Daten!
+	    * @throws SQLException
+	    */
 	   private void createTable_Teachers() throws SQLException{
 		   Statement stmt = conn.createStatement();
 		   try{stmt.executeUpdate("DROP TABLE teachers");}
@@ -351,12 +464,21 @@ public class UserDBaccess {
 		   stmt.executeUpdate("insert into teachers values (3,'TUM','TUM')");
 	   }
 	   
+	   /**
+	    * <b>!!!ACHTUNG!!!</b> Löscht ALLE vorhanenden Daten!
+	    * @throws SQLException
+	    */
 	   public void resetAll() throws SQLException{
 		   createTable_Projects();
 		   createTable_Students();
 		   createTable_Teachers();
 	   }
 
+	   /**
+	    * Löscht das angegebene Projekt.
+	    * @param projectname
+	    * @return
+	    */
 	   public boolean delete(String projectname) {
 		   try{
 			   Statement stmt = conn.createStatement();
@@ -368,6 +490,11 @@ public class UserDBaccess {
 		   }
 	   }
 
+	   /**
+	    * Gibt Aufschluss, ob ein Projekt mit diesem Namen existiert. 
+	    * @param projectName
+	    * @return
+	    */
 	   public boolean projectExists(String projectName) {
 			try{
 				Statement stmt = conn.createStatement();

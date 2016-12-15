@@ -1,4 +1,4 @@
-package Controller;
+package ControllerTest;
 import static org.junit.Assert.*;
 
 import java.awt.event.ActionEvent;

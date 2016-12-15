@@ -19,10 +19,9 @@ import controller.DCCommand;
 import model.Model;
 
 /**
- * Definiert die Lehrer-Sicht der grafischen Oberfläche
+ * Definiert die Projektübersicht aus Lehrerperspektive
  * 
  * @author workspace
- *
  */
 public class TeacherView extends JView{
 	private ListSelectionModel listSelectionModel;
@@ -58,12 +57,13 @@ public class TeacherView extends JView{
 		projectList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		new JScrollPane(projectList);
 		listSelectionModel = projectList.getSelectionModel();
-		projectList.setLayoutOrientation(JList.HORIZONTAL_WRAP);
-		projectList.setPreferredSize(new Dimension(250,250));
+		// Liste wird nicht umgebrochen, sondern vertikal weitergeführt
+		projectList.setLayoutOrientation(JList.VERTICAL);
 		projectList.setFixedCellHeight(25);
 		JScrollPane scrollPanel_pL = new JScrollPane(projectList);
 		scrollPanel_pL.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		scrollPanel_pL.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		scrollPanel_pL.setPreferredSize(new Dimension(250,250));
 		mainPanel.add(scrollPanel_pL, BorderLayout.LINE_START);
 		
 		// Zeilen werden umgebrochen und Wortgrenzen beachtet
@@ -79,9 +79,9 @@ public class TeacherView extends JView{
 		// Buttons hinufügen
 		JPanel buttonPanel = new JPanel();
 		buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-		enter.setActionCommand(DCCommand.editProject.toString());
-		newProject.setActionCommand(DCCommand.newProject.toString());
-		delete.setActionCommand(DCCommand.deleteProject.toString());
+		enter.setActionCommand(DCCommand.EditProject.toString());
+		newProject.setActionCommand(DCCommand.NewProject.toString());
+		delete.setActionCommand(DCCommand.DeleteProject.toString());
 		buttonPanel.add(newProject);
 		buttonPanel.add(enter);
 		buttonPanel.add(delete);

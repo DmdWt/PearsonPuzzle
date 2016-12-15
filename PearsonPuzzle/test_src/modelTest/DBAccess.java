@@ -1,9 +1,11 @@
-package model;
+package modelTest;
 
 import static org.junit.Assert.*;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Random;
+
 import org.junit.*;
 
 public class DBAccess {
@@ -12,10 +14,11 @@ public class DBAccess {
 	// TODO: null testen
 	private final static String normalString ="r2d2r2d2r2d2r2d";
 	private final static String emptyString="";
+	private final static String spaceString="     ";
 	private final static String noString=null;
 	private final static String tabString= "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t";
 	private final static String newLines = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
-	private final static String fancyString =getFancyString();
+	private final static String fancyString = "äöü!(){}"; //getFancyString();
 	private ArrayList <String> stringList;
 		
 	@Before
@@ -23,10 +26,11 @@ public class DBAccess {
 		stringList = new ArrayList<String>();
 		stringList.add(normalString);
 		stringList.add(emptyString);
+		stringList.add(spaceString);
 		stringList.add(tabString);
 		stringList.add(newLines);
 		stringList.add(fancyString);
-		stringList.add(null);
+		stringList.add(noString);
 		try {
 			db = new UserDBaccess();
 		} catch (SQLException e) {
@@ -37,12 +41,53 @@ public class DBAccess {
 	@After
 	public void clear(){
 		for(String projectName : stringList){
+			if(projectName!= null && projectName.length()>UserDBaccess.getLength_ProjectName()){
+				projectName = new String(projectName.substring(0, UserDBaccess.getLength_ProjectName()-1));
+			}
 			db.delete(projectName);
 		}
-		db.delete(fancyString.substring(0, UserDBaccess.getLength_ProjectName()-1));
 	}
 	
-	private void saveProject(final String projectName, final String codeString, final int linelength){
+	@Test void saveProject_Test2(){
+		db.saveProject(normalString, normalString, 0,0);
+	}
+	
+	@Test
+	public void saveProject_Test() {
+		for(String projectName : stringList){
+			for(String codeString : stringList){
+				// ---- Projekt wird gespeichert.
+				db.saveProject(projectName, codeString, 0, 0);
+				
+				try{
+					// --- Projektname wird auf richtige Länge gebracht
+				if(projectName!= null && projectName.length()>UserDBaccess.getLength_ProjectName())
+					projectName = new String(projectName.substring(0, UserDBaccess.getLength_ProjectName()-1));
+				
+					// ---- 
+				if(codeString==null)
+					//	NotEqual, weil dann nichts gespeichert wurde (und noch der Code aus dem letzten Schleifendurchlauf abgerufen wird)
+					assertNotEquals(null, db.getCode(projectName));
+				else if(codeString.equals(newLines))
+					assertEquals("", db.getCode(projectName));
+				else
+					assertEquals(codeString, db.getCode(projectName));
+				}catch(SQLException e){
+					// Manche Projektnamen sind nicht zulässig und werfen dann beim get eine Exception (weil kein zugehöriger Datensatz vorhanden ist)
+					if(projectName==null)
+						continue;
+					if(projectName.equals(emptyString) || projectName.equals(spaceString) && e.equals("24000"))
+						//	SQL Error: Invalid cursor state - no current row. (
+						continue;
+					e.printStackTrace();
+					fail("Problem beim vergleichen von "+codeString+"... in "+projectName+"...");
+				}
+			}
+		}	
+	}
+	/*
+	 
+	 private void saveProject(final String projectName, final String codeString, final int linelength){
 		// TODO: Testfehler sauber definieren
 		db.saveProject(projectName, codeString, linelength, 0);
 		try {
@@ -53,36 +98,6 @@ public class DBAccess {
 			e.printStackTrace();
 		}
 	}
-	
-	@Test
-	public void saveProject_Test() {
-		for(String projectName : stringList){
-			for(String codeString : stringList){
-				db.saveProject(projectName, codeString, 0, 0);
-				System.out.println(projectName);
-				try{
-				if(projectName!= null && projectName.length()>UserDBaccess.getLength_ProjectName())
-					if(codeString==null)
-						assertNotEquals(null, db.getCode(fancyString.substring(0, UserDBaccess.getLength_ProjectName()-1)));
-					else
-						assertEquals(codeString, db.getCode(fancyString.substring(0, UserDBaccess.getLength_ProjectName()-1)));
-				else if(codeString==null)
-					assertNotEquals(null, db.getCode(projectName));
-				else
-					assertEquals(codeString, db.getCode(projectName));
-					}
-				catch(SQLException e){
-					if(projectName==null)
-						continue;
-					if(projectName.equals(""))
-						continue;
-					fail("Problem beim vergleichen von "+codeString+"... in "+projectName+"...");
-					e.printStackTrace();
-					}
-			}
-		}	
-	}
-	/*
 	@Test 
 	public void multiThread(){
 		try {
@@ -185,10 +200,27 @@ public class DBAccess {
 	 */
 	private static String getFancyString(){
 		StringBuffer buf = new StringBuffer();
-		for(int i=0; i<256;i++){
-			buf.append(i);
+		for(int i=32; i!=127 && i<256;i++){
+			if(i!=40 && i!=41)
+			buf.append((char)i);
 		}
-		return buf.toString();		
+		String ret=new String(buf);
+		return ret;		
+	}
+	
+	/**
+	 * String mit zufälligen ASCI Zeichen @return
+	 */
+	private static String getRandomString(){
+		StringBuffer buf = new StringBuffer();
+		Random rand = new Random();
+		for(int i=0; i<256 ;i++){
+			int n=rand.nextInt(256);
+			if(n>=32 && n!=127)
+				buf.append((char)n);
+		}
+		String ret=new String(buf);
+		return ret;
 	}
 	
 	

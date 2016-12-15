@@ -2,7 +2,6 @@ package view;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
-import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -32,30 +31,9 @@ public abstract class JView implements Observer {
 			// main Panel wird bereinigt
 			// da mainPanel static ist, ist dies notwendig (nur eine einzige Instanz existeiert) 
 			// XXX: Herangehensweise ändern (protected static ist nicht optimal
-			mainPanel.removeAll();
 			this.model=model;
 			model.addObserver(this);
-		}
-	
-		/**
-		 * Soll noch in einen Presenter ausgelagert werden <br>
-		 * ermöglicht, dass die Swing Komponenten ein Listen Model erhalten
-		 * Liste aus dem Model @param stringList
-		 * Liste für (swing) View @return
-		 */
-		protected DefaultListModel<String> makeDefaultListModel(List<String> stringList){
-			DefaultListModel<String> listModel = new DefaultListModel<String>();
-			
-			// Dies ist nötig, um bei JList Elementen die Tabbreite berücksichtigen zu können
-			for(String string : stringList){
-				String tab=" ";
-				for(int i=0;i<model.getTabSize();i++){
-					tab=tab+" ";
-				}
-				String bString = string.replaceAll("\t", tab);
-				listModel.add(listModel.size(),  bString);
-			}
-			return listModel;
+			quitView();
 		}
 		
 		
@@ -84,6 +62,11 @@ public abstract class JView implements Observer {
 		public void addMenuToFrame(JMenuBar menuBar){
 			frame.setJMenuBar(menuBar);
 		}
+		protected void setMainPanel(JPanel mainPanel){
+			this.mainPanel=mainPanel;
+			frame.add(mainPanel);
+			draw();
+		}
 		
 		/**
 		 * Frame wird auf sichtbar gesetzt und Größe festgelegt.
@@ -94,8 +77,6 @@ public abstract class JView implements Observer {
 			if(frame.isVisible()==false){
 				frame.setVisible(true);
 			}
-			
-			// TODO: wenn frame bereits sichtbar ist, updaten
 		}
 		
 		/**
@@ -111,6 +92,7 @@ public abstract class JView implements Observer {
 		 */
 		public void quitView(){
 			mainPanel.removeAll();
+			model.deleteObserver(this);
 		}
 		
 		/**
@@ -144,11 +126,11 @@ public abstract class JView implements Observer {
 		 */
 		public Integer showMessage(Allert allert){
 			if(allert==Allert.projectSaved){
-				menu.add(new JLabel("Projekt wurde gespeichert"));
+				//menu.add(new JLabel("Projekt wurde gespeichert"));
 				return null;
 			}
 			else
-				return allert.allert();
+				return allert.allert(model);
 		}
 		public void closeAllert(){
 			

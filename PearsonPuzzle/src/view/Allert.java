@@ -2,10 +2,17 @@ package view;
 
 import javax.swing.JOptionPane;
 
+import model.Model;
+
+/**
+ * Klasse dient dazu, mögliche Allerts zu definieren und dem Nutzer <br>
+ * Warnungen, Fehler auszugeben und eventuell um Bestätigung zu bitten.
+ * @author workspace
+ */
 public enum Allert {
-	noProjectSelected, noContentInput, projectSaved, projectDeleted, projectExists, notSaved, reset;
+	noProjectSelected, noContentInput, projectSaved, projectDeleted, projectExists, notSaved, reset, Failure;
 	
-	public Integer allert(){
+	public Integer allert(Model model){
 		Integer n;
 		String[] yesNoCancelOptions = { "Ja", "Nein", "Abbrechen" };
 		String[] yesNoOptions = {"Ja", "Nein"};
@@ -20,13 +27,12 @@ public enum Allert {
 				JOptionPane.showMessageDialog(null,"Projekt wurde erfolgreich gespeichert");
 				return null;
 			case projectDeleted: 
-				JOptionPane.showMessageDialog(null, "Projekt wurde gelöscht");
+				//JOptionPane.showMessageDialog(null, "Projekt wurde gelöscht");
 				return null;
 			case projectExists:
 				JOptionPane.showMessageDialog(null, "Es existert ein Projekt mit gleichem Namen.\nBitte wählen Sie einen anderen Namen.");
 				return null;
 			case notSaved:
-				// FIXME: erscheint auch, wenn Projekt gerade erst gespeichert wurde
 				n = JOptionPane.showOptionDialog( null,
 				          "Projekt wurde noch nicht gespeichert.\nWollen Sie speichern bevor Sie fortfahren?",	// Nachricht/Frage
 				          "Projekt noch nicht gespeichert.",	// Titel
@@ -41,7 +47,9 @@ public enum Allert {
 						JOptionPane.YES_NO_OPTION,
 						JOptionPane.WARNING_MESSAGE, // Icon
 						null, yesNoOptions, yesNoOptions[0]);
-				return n;				
+				return n;
+			case Failure: 
+				return null;
 			default:
 				return null;
 		}

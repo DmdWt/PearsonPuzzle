@@ -16,14 +16,16 @@ import javax.swing.TransferHandler;
  *
  */
 public class FromTransferHandler extends TransferHandler {
-	JList dragJList;
-	DefaultListModel dragDList;
+	private static final long serialVersionUID = 1L;
+	private JList<String> dragJList;
+	private DefaultListModel<String> dragDList;
+	
 	//DefaultListModel from;
-	public FromTransferHandler(DefaultListModel dragDList, JList dragJList){
+	public FromTransferHandler(DefaultListModel<String> dragDList, JList<String> dragJList){
 		this.dragDList=dragDList;
 		this.dragJList=dragJList;
 	}
-	
+	// ----- ExportMethoden
     public int getSourceActions(JComponent comp) {
         return COPY_OR_MOVE;
     }
@@ -31,17 +33,20 @@ public class FromTransferHandler extends TransferHandler {
     private int index = 0;
     public Transferable createTransferable(JComponent comp) {
         index = dragJList.getSelectedIndex();        
-        if (index < 0 || index >= dragDList.getSize()) {
+        if (index < 0 || index >= dragDList.getSize())
             return null;
-        }
         return new StringSelection((String)dragJList.getSelectedValue());
     }
     
     public void exportDone(JComponent comp, Transferable trans, int action) {
-        if (action != MOVE) {
-        	
+    	if (action != MOVE) {
+        	dragJList.clearSelection();
+    		return;
+        }
+        if(action == MOVE){
+        	dragDList.removeElementAt(index);
+        	dragJList.clearSelection();
         	return;
         }
-        dragDList.removeElementAt(index);
     }
 }

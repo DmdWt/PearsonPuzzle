@@ -1,4 +1,4 @@
-package Controller;
+package ControllerTest;
 
 import static org.junit.Assert.*;
 
@@ -40,7 +40,7 @@ public class LogoutButtonTest {
 		Controller controller = new DefaultController(model, view);
 		JButton testButton = new JButton();
 		sleep(100);
-		ActionEvent e = new ActionEvent(testButton, 1, DCCommand.logout.toString());
+		ActionEvent e = new ActionEvent(testButton, 1, DCCommand.Logout.toString());
 		controller.actionPerformed(e);
 		assertEquals(controller.getView().getClass(), LoginView.class);
 	}
@@ -52,7 +52,7 @@ public class LogoutButtonTest {
 		Controller controller = new DefaultController(model, view);
 		JButton testButton = new JButton();
 		sleep(100);
-		ActionEvent e = new ActionEvent(testButton, 1, DCCommand.logout.toString());
+		ActionEvent e = new ActionEvent(testButton, 1, DCCommand.Logout.toString());
 		controller.actionPerformed(e);
 		assertEquals(controller.getView().getClass(), LoginView.class);
 	}
@@ -63,7 +63,7 @@ public class LogoutButtonTest {
 		Controller controller = new DefaultController(model, view);
 		JButton testButton = new JButton();
 		sleep(100);
-		ActionEvent e = new ActionEvent(testButton, 1, DCCommand.logout.toString());
+		ActionEvent e = new ActionEvent(testButton, 1, DCCommand.Logout.toString());
 		controller.actionPerformed(e);
 		assertEquals(controller.getView().getClass(), LoginView.class);
 	}
@@ -74,7 +74,7 @@ public class LogoutButtonTest {
 		Controller controller = new DefaultController(model, view);
 		JButton testButton = new JButton();
 		sleep(100);
-		ActionEvent e = new ActionEvent(testButton, 1, DCCommand.logout.toString());
+		ActionEvent e = new ActionEvent(testButton, 1, DCCommand.Logout.toString());
 		controller.actionPerformed(e);
 		assertEquals(controller.getView().getClass(), LoginView.class);
 	}
@@ -85,7 +85,7 @@ public class LogoutButtonTest {
 		Controller controller = new DefaultController(model, view);
 		JButton testButton = new JButton();
 		sleep(100);
-		ActionEvent e = new ActionEvent(testButton, 1, DCCommand.logout.toString());
+		ActionEvent e = new ActionEvent(testButton, 1, DCCommand.Logout.toString());
 		controller.actionPerformed(e);
 		assertEquals(controller.getView().getClass(), LoginView.class);
 	}
