@@ -1,10 +1,13 @@
 package visitor;
 
+import java.sql.SQLException;
+
 import javax.swing.UIManager;
 
 import controller.Controller;
 import controller.DefaultController;
 import model.Model;
+import model.DB.DBModelTransfer;
 import view.LoginView;
 
 /**
@@ -14,6 +17,8 @@ import view.LoginView;
  * @author workspace
  */
 public class user {
+	
+	
 	public static void main (String args[]){
 //		try {
 //			  UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );

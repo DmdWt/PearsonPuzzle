@@ -16,42 +16,48 @@ import javax.swing.TransferHandler;
 import model.Model;
 
 /**
- * Klasse definiert, was beim "droppen" mit dem Element passiert, auf das
- * "gedropped" wurde.
+ * Klasse ermöglicht, Drag&Drop Aktionen durchzuführen. <br>
+ * Es werden nur bekannte Elemente (aus codeVector) aufdgenommen. <br>
+ * Um dies zu prüfen greift die Klasse auf das Model zurück.  
  * 
+ * Das Verhalten kann über die Ü
  * @author workspace
  *
  */
 public class ToSaveTransferHandler extends TransferHandler {
 	private static final long serialVersionUID = 1L;
-	int action;
-	private DefaultListModel<String> dropDList;
-	private DropMode defaultDropmode;
-	private JList<String> dropJList;
-	private int dragIndex = 0;
-	private int dropIndex = 0;
-	private boolean internDnD;
-	private boolean dragSameElement;
-	private boolean removeElements;
-	private Model model;
 	
 	// Puzzlemodus 0: Reines Drag and Drop
-	public final static int DnD_simple=0;
+		public final static int DnD_simple=0;
 	// Puzzlemodus 1: Elemente werden von rechts nach links "geschaufelt", mit zurückschaufeln
-	//public final static int BuggerDnD=1;
+		public final static int BuggerDnD=1;
 	// Puzzlemodus 2: Elemente werden von rechts nach links geschaufelt, ohne zurückschaufeln
-	public final static int DnD_Bugger_OneWay=2;
+		public final static int DnD_Bugger_OneWay=2;
 	// Puzzlemodus 3: Elemente bleiben rechts vorhanden, mehrfach-Drag ist möglich
-	public final static int DnD_Bugger_Endless=3;
+		public final static int DnD_Bugger_Endless=3;
+		
+	private DefaultListModel<String> dropDList;
+	private JList<String> dropJList;
+	private Integer dragIndex;			// Listenindex des gedragten Elements
+	private Integer dropIndex;			// Listenindex der Position, an der ein Element gedropt wird.
+	
+
+	private int action;					// COPY oder MOVE
+	private DropMode defaultDropmode;	// Damit externer DnD prinzipiell auch Elemnte ersetzten kann (bei internem DnD immer Insert)
+	private boolean internDnD;			// Gibt Auskunft, ob es sich um ein Listeninternes DnD Event handelt (wird beim Export gesetzt und beim Import ausgelesen)	
+	private boolean dragSameElement;	// Das gleiche Element kann mehrfach importiert werden
+	private boolean removeElements;  	// Elemente wandern wieder zurück
+	private boolean deleteElements; 	// Elemente wandern nicht wieder zurück, sondern werden entfernt
+	private Model model;
 	
 	public ToSaveTransferHandler(DefaultListModel<String> dropDList, JList<String> dropJList,int Type, Model model) {
 		this.model=model;
 		switch(Type){
         case 0:
         	action=TransferHandler.MOVE;
+        	defaultDropmode = DropMode.INSERT;
         	removeElements=true;
         	dragSameElement=true;
-        	defaultDropmode=DropMode.INSERT;
         	Vector<String> codeVector = model.getCodeVector();
         	if(model.getSollution().isEmpty())
         		for(int i=0;i<codeVector.size();i++){
@@ -60,31 +66,35 @@ public class ToSaveTransferHandler extends TransferHandler {
         		}
         	break;
         case 1:
-        	// FIXME: Zu füllen
+        	action=TransferHandler.MOVE;
+        	defaultDropmode = DropMode.INSERT;
+        	removeElements=true;
+        	deleteElements=false;
+        	dragSameElement=true;
         	break;
         case 2:
         	action=TransferHandler.MOVE;
+        	defaultDropmode = DropMode.INSERT;
         	removeElements=false;
+        	deleteElements=false;
         	dragSameElement=true;
-        	defaultDropmode=DropMode.INSERT;
         	break;
         case 3:
         	action=TransferHandler.COPY;
+        	defaultDropmode = DropMode.INSERT;
         	removeElements=true;
+        	deleteElements=true;
         	dragSameElement=true;
-        	defaultDropmode=DropMode.ON_OR_INSERT;
         	break;
         default:      
         	action = TransferHandler.MOVE;
-        	removeElements=true;
+        	defaultDropmode = DropMode.INSERT;
+        	removeElements=false;
+        	deleteElements=false;
         	dragSameElement=false;
-        	defaultDropmode=DropMode.INSERT;
         	break;
         }
 		internDnD=false;
-        defaultDropmode=dropJList.getDropMode();
-        defaultDropmode=DropMode.INSERT;
-        System.out.println(defaultDropmode);
         this.dropDList=dropDList;
         this.dropJList=dropJList;
     }
@@ -95,54 +105,62 @@ public class ToSaveTransferHandler extends TransferHandler {
 	public void setAction(int action){
 		this.action=action;
 	}
-	
+	/**
+	 * Entfernen von Elementen wird ermöglicht.
+	 */
 	public void enableRemove(){
 		this.removeElements=true;
 	}
+	
+	/**
+	 * Entfernen von Elementen wird verhindert.
+	 */
 	public void disableRemove(){
 		this.removeElements=false;
 	}
-	public void setDefaultDropMode(DropMode dropMode){
-		this.defaultDropmode=dropMode;
-	}
     
 	// --------------- Import Methoden
+	@Override
     public boolean canImport(TransferHandler.TransferSupport support) {
-        if (!support.isDrop()) {
+        
+    	if (!support.isDrop())
         	return false;
-        }
-        if (!support.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+        
+    	if (!support.isDataFlavorSupported(DataFlavor.stringFlavor))
             return false;
-        }
+        
         boolean actionSupported = (action & support.getSourceDropActions()) == action;
         if (actionSupported) {
             support.setDropAction(action);
             return true;
         }
+        
         return false;
     }
-
+	@Override
     public boolean importData(TransferHandler.TransferSupport support) {
-        if (!canImport(support)) {
-            return false;
-        }
+        
+    	if (!canImport(support))
+        	return false;
+        
         JList.DropLocation dl = (JList.DropLocation)support.getDropLocation();
         dropIndex = dl.getIndex();
-        
         String data;
         try {
-            data = (String)support.getTransferable().getTransferData(DataFlavor.stringFlavor);
-        } catch (UnsupportedFlavorException e) {
-            return false;
-        } catch (java.io.IOException e) {
-            return false;
+        	data = (String)support.getTransferable().getTransferData(DataFlavor.stringFlavor);
+        	} catch (UnsupportedFlavorException e) {
+        		return false;
+        	} catch (java.io.IOException e) {
+        		return false;
         }
-
+        
         JList<String> list = (JList<String>)support.getComponent();
         DefaultListModel<String> listModel = (DefaultListModel<String>)list.getModel();
-        
+        if(!model.getCodeVector().contains(data))
+        	// Daten von Extern werden nicht anerkannt
+        	return false;
     	if(internDnD){
-    		// Wenn Drag and Drop Liste gleich ist
+    		// Wenn internes DnD, werden Elemente nur verschoben, nicht ersetzt
     		listModel.insertElementAt(data, dropIndex);
     		model.insertInSollution(dropIndex, data);
 
@@ -155,14 +173,14 @@ public class ToSaveTransferHandler extends TransferHandler {
     	}
     	else if(listModel.contains(data)
         		&& !dragSameElement){
-    		// Gleiches Element kann nicht 2x aus der rechten Liste gezogen werden.
+    		// Gleiches Element wird nicht 2x aus der rechten Liste gezogen.
         	return false;
         }
         else{
+        	// 
         	listModel.insertElementAt(data, dropIndex);
-        	if(list.getDropLocation().isInsert()){
+        	if(list.getDropLocation().isInsert())
         		model.insertInSollution(dropIndex, data);
-        	}
         	else{
         		model.replaceInSollution(dropIndex, data);
         		listModel.remove(dropIndex+1);
@@ -177,27 +195,34 @@ public class ToSaveTransferHandler extends TransferHandler {
     
     
     // --------- Export Methoden -----------------
+	@Override
     public int getSourceActions(JComponent comp) {
         return COPY_OR_MOVE;
     }
     
+	@Override
     public Transferable createTransferable(JComponent comp) {
-    	dropJList.setDropMode(DropMode.INSERT);
+        internDnD=true; // Information, dass es sich um ein itnernes DnD handelt
+    	dropJList.setDropMode(DropMode.INSERT); // Elemente werden verschoben, nicht ersetzt
         dragIndex = dropJList.getSelectedIndex();
-        // Information, dass es sich um ein internes Drag and Drop handelt
-        internDnD=true;
-        if (dragIndex < 0 || dragIndex >= dropDList.getSize()) {
+        
+        if (dragIndex < 0 || dragIndex >= dropDList.getSize())
             return null;
-        }
         return new StringSelection((String)dropJList.getSelectedValue());
     }
     
+	@Override
     public void exportDone(JComponent comp, Transferable trans, int action) {
-    	
-    	System.out.print(action);
     	// Elemente werden entfernt 
-        if(removeElements && action==0 ){
-        	// FIXME: Insert muss besser gehandelt werden
+        if(dropIndex==null && removeElements && action!=0){
+        	dropDList.removeElementAt(dragIndex);
+        	model.removeInSollution(dragIndex);
+        	if(defaultDropmode==DropMode.ON){
+        		dropDList.addElement("");
+        	}
+        }
+        // Elemente werden gelöscht (rechts nicht wieder aufgenommen)
+        else if(dropIndex==null && deleteElements){
         	dropDList.removeElementAt(dragIndex);
         	model.removeInSollution(dragIndex);
         	if(defaultDropmode==DropMode.ON){
@@ -205,8 +230,8 @@ public class ToSaveTransferHandler extends TransferHandler {
         	}
         }
         
-        // Internes DnD
-        if(internDnD && action!=0){
+        // Internes DnD wird abgehandelt (verschieben)
+        else if(dropIndex!=null && action!=0){
         	System.out.println(action);
         	if(dragIndex<=dropIndex){
         		dropDList.removeElementAt(dragIndex);
@@ -217,18 +242,12 @@ public class ToSaveTransferHandler extends TransferHandler {
         		dropDList.removeElementAt(dragIndex+1);
         	}
         }
-        // Damit erkannt wird, wenn Drag and Drop von Extern kommt
+        // Damit erkannt wird, ob interne oder externe DnD Aktion vorliegt, 
+        // werden wieder die defaultwerte gesetzt
         dropJList.clearSelection();
         internDnD=false;
         dropJList.setDropMode(defaultDropmode);
+        dropIndex=null;
         return;
     }
-
-	public boolean isDragSameElement() {
-		return dragSameElement;
-	}
-
-	public void setDragSameElement(boolean dragSameElement) {
-		this.dragSameElement = dragSameElement;
-	}
 } 

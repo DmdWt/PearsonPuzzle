@@ -1,12 +1,14 @@
 package view.teacher;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.Box;
+import javax.swing.JButton;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
-
 import view.Menu;
 
 import controller.Controller;
@@ -19,12 +21,21 @@ import controller.DCCommand;
  */
 public class MenuTeacher extends Menu{
 	private static final long serialVersionUID = 1L;
+	
 	private List <JMenuItem> menuItems;
+	private List <JButton> extendedNavigation;
 	
 	MenuTeacher(){
 		menuItems=new ArrayList <JMenuItem>();
+		extendedNavigation = new ArrayList <JButton>();
 		setupMenu();
-		}
+	}
+	MenuTeacher(int navigationSelection){
+		menuItems=new ArrayList <JMenuItem>();
+		extendMenu();
+		this.setNavigation(navigationSelection);
+		setupMenu();
+	}
 	
 	@Override
 	protected void setupMenu(){
@@ -52,6 +63,7 @@ public class MenuTeacher extends Menu{
 		menuItems.add(new JMenuItem("Logout"));
 		menuItems.get(menuItems.size()-1).setActionCommand(DCCommand.Logout.toString());
 		
+		this.add(Box.createHorizontalGlue());
 		this.add(mainMenu);
 		this.add(classMenu);
 		this.add(configMenu, JMenuBar.RIGHT_ALIGNMENT);
@@ -69,10 +81,45 @@ public class MenuTeacher extends Menu{
 			seperator++;
 		}
 	}
+	private void extendMenu(){
+		// Wenn das Menü noch nicht erweitert ist, geschieht dies hier.
+		if(this.getComponentCount()<=menuItems.size()){
+			extendedNavigation = new ArrayList <JButton>();
+			extendedNavigation.add(new JButton("Code"));
+			extendedNavigation.get(extendedNavigation.size()-1).setActionCommand(DCCommand.EditProject.toString());
+			extendedNavigation.add(new JButton("Reihenfolgen"));
+			extendedNavigation.get(extendedNavigation.size()-1).setActionCommand(DCCommand.ConfigureProject.toString());
+			extendedNavigation.add(new JButton("JUnit"));	
+			for(JButton comp: extendedNavigation){
+				comp.setOpaque(true);
+				comp.setBackground(Color.WHITE);
+				//comp.setMaximumSize(new Dimension(200,20));
+				this.add(comp);
+			}
+		}
+	}
+	public void reduceMenu(){
+		for(int i=this.getComponentCount(); i>menuItems.size();i++){
+			this.remove(i);
+		}
+	}
+	private void setNavigation(int navigationIndex){
+		if(extendedNavigation.size()>=navigationIndex){
+			for(JButton comp: extendedNavigation){
+				comp.setBackground(Color.WHITE);
+			}
+			System.out.println(extendedNavigation.get(navigationIndex).getText());
+			extendedNavigation.get(navigationIndex).setBackground(Color.LIGHT_GRAY);
+		}
+	}
+	
 	@Override
 	public void addActionListener(Controller controller){
 		for(JMenuItem menuItem : menuItems){
 	    	menuItem.addActionListener(controller);
 	    }
+		for(JButton comp: extendedNavigation){
+			comp.addActionListener(controller);
+		}
 	}
 }

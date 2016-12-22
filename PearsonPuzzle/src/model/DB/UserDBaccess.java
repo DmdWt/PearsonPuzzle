@@ -1,4 +1,4 @@
-package model;
+package model.DB;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -6,14 +6,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Vector;
 
 public class UserDBaccess {
 
 	 Connection conn;
 	 private final static int length_projectName = 36;
 	 private final static int length_projectDescription = 1024;
-	 private final static int MAX_line_length_Code = 8000;
-	 private final static int MIN_line_length_Code = 10;
 	 public UserDBaccess() throws SQLException {
 		String dbUrl = "jdbc:derby:database;create=true";
 		conn = DriverManager.getConnection(dbUrl);
@@ -40,33 +39,38 @@ public class UserDBaccess {
 	  
 	   
 	   // -----  Nutzername und Passwort Vergleich Schüler
-	   public boolean lookUpstudent(String name, char[] password){
+	   public boolean lookUpstudent(String name, String passwordstring){
 		   try{	  
 			   Statement stmt = conn.createStatement();
-			   String passwordstring = new String(password);
 			   ResultSet rs = stmt.executeQuery("SELECT * FROM students WHERE username= '" + name + "' AND password = '"+passwordstring+"'");	
 			   if(!rs.next() ){
-			    	 return false;
+				   //stmt.close();
+				   return false;
 			   }
 			   else{
-			   	 	return true;
+				   //stmt.close();
+				   return true;
 			   }		     
+			   
 		   }
 		   catch(Exception e){
 			   return false;
 		   }
+		   
 	   }
 	   
 	   // ----- Nutzername und Passwort Vergleich Lehrer
-	   public boolean lookUpteacher(String name, char[] password) {
+	   public boolean lookUpteacher(String name, String passwordstring) {
 		   try{
-			   String passwordstring = new String(password);
+			   
 			   Statement stmt = conn.createStatement();
 			   ResultSet te = stmt.executeQuery("SELECT * FROM teachers WHERE username = '" + name + "' AND password = '"+passwordstring+"'");	
 			     if(!te.next() ){
-			    	return false;}
+					 //stmt.close();
+			    	 return false;}
 			     else{
-			    	return true;}
+					 //stmt.close();
+			    	 return true;}
 		   } catch(Exception e){
 			   		return false;}
 	   }
@@ -119,7 +123,70 @@ public class UserDBaccess {
 		   while (rsT.next()) { 
 			   //System.out.printf("%d\t%s\t%s\n", rs.getInt("id"), rs.getString("username"), rs.getString("password"));			   
 		   }
+		   //stmt.close();
 	   }
+	   
+	   
+	   
+	   /**
+	    * Speichert das übergebene Projekt 
+	    * #depricated
+	    * 
+	    * @param codeString
+	    * @param projectname
+	    * @param linelength
+	    * @param projectID
+	    * @throws SQLException
+	    */
+	   public void saveProject(String projectname, String[] codeString, String imports, String description, 
+			   					ArrayList<Integer> randomKeys, int tabsize, int linelength) throws SQLException{
+		   
+		   Statement stmt = conn.createStatement();
+		   
+		   //XXX doppelte Tabellennamen besser handeln
+		   //FIXME imports länge = 100 ändern
+		   
+		   // ----- Speichert Projektnamen Tabelle
+		   try{
+			   stmt.executeUpdate("CREATE TABLE Projects ( " +
+				   		"pName varchar("+length_projectName+") UNIQUE, " +   		
+				   		"imports varchar(100) , " +  
+				   		"description varchar("+length_projectDescription+"), " +
+				   		"tabSize INT)");
+		   }
+		   catch(Exception e){ //Tabelle existiert bereits
+			   }
+		   
+			  
+		   //Projekt in Projects Tabelle abspeichern
+		   try{stmt.execute("INSERT INTO Projects VALUES ("
+		   		+ "'"+projectname+"',"
+		   		+ "'"+imports+"',"
+		   		+ "'"+description+"',"
+		   		+ ""+tabsize+")");
+		   
+		   // Project wird in neuer Tabelle abgespeichert
+		   createProject(projectname, codeString, randomKeys, linelength);
+		   }
+		   catch(SQLException e){	//Projektname bereits vorhanden => Projekt wird aktualisiert
+			   if(e.getSQLState().equals("23505")){
+				   
+				   stmt.executeUpdate("UPDATE Projects SET "
+					   		+ "imports='"+imports+"',"
+					   		+ "description='"+description+"',"
+					   		+ "tabsize="+tabsize+" "
+					   		+ "WHERE pName='"+projectname+"'");
+				   
+				   createProject(projectname, codeString, randomKeys, linelength);
+		   }
+		   }
+		   
+		   
+			
+			//-----------------------------testing------------------------------------
+		   
+	   }
+	   
 	   
 	   
 	 /**
@@ -129,51 +196,58 @@ public class UserDBaccess {
 	 * @param projectname
 	 * @param codeString
 	 * @param linelength
-	 * @param tab
+	 * @param randomKey
 	 */
 	   
-	   public void saveProject(String projectname, String codeString, int linelength, int tab) {
-		   // TODO: Linelength umdefinieren (wird nicht zwingend benötigt, übergebene Integer kann aber evtl. Verwendung finden
-		   if(linelength < 1){
-			   linelength = MIN_line_length_Code;
-		   }
-		   else if(linelength >8000){
-			   linelength = MAX_line_length_Code;
-		   }
-		   if(projectname==null || codeString==null){
-			   return;
-		   }
-		   else if(projectname.length()>length_projectName){
-			   projectname= new String(projectname.substring(0,length_projectName-1));
-		   }
-		   else if(projectname.length()==0){
-			   return;
-		   }
-		   
-		   // -- Code Array wird erzeugt und wieder zu einem String zusammengefasst
-		   String[] codeStrings=codeString.split("\n");
-		   codeString = unite(codeStrings, false, tab);
-		   String randomCode=unite(codeStrings, true, tab);
+	   public void createProject(String projectname, String[] codeString, ArrayList<Integer> randomKeys, int linelength) {
 		   
 		   try{
 			   Statement stmt = conn.createStatement();
-			   stmt.execute("INSERT INTO Projects VALUES ('"+projectname+"', '"+codeString+"','"+randomCode.toString()+"','',0)");
+			   try{
+				   stmt.executeUpdate("DROP TABLE "+projectname); 
+			   }
+				   catch(Exception e){
+					   }
+				   
+			   stmt.execute("CREATE TABLE "+projectname+" ( " +
+				   		"lineKey int PRIMARY KEY, " +	
+				   		"codeLine varchar("+linelength+"), " +	
+				   		"randomKey int)");
+
+			   
+			   for(int i = 0; i < codeString.length;i++){
+				   stmt.executeUpdate("INSERT INTO "+projectname+" VALUES ("
+				   		+ ""+i+","
+				   		+ "'"+codeString[i]+"',"
+				   		+ ""+randomKeys.get(i).intValue()+")");
+			   }
 		   }
 		   catch(SQLException e){
-			   // Falls der Eintrag schon existiert.
-			   if(e.getSQLState().equals("23505")){
-				   try{
-					   Statement stmt = conn.createStatement();
-					   stmt.execute("UPDATE Projects SET Code='"+codeString+"', randomCode='"+randomCode.toString()+"' WHERE pName='"+projectname+"'");
+			   				   return;
 				   }
-				   catch(SQLException e1){
-					   e1.printStackTrace(); 
-					   //XXX: Auto generated Method stub 
-					   }
+	
+		   }
+	   
+	   
+	   
+	   public void updateProject(String projectname, String[] codeString, ArrayList<Integer> randomKeys, int linelength) {
+		   
+		   try{
+			   Statement stmt = conn.createStatement();			   
+			   stmt.executeUpdate("ALTER TABLE "+projectname+" ALTER COLUMN codeLine SET DATA TYPE varchar("+linelength+")");
+			   for(int i = 0; i < codeString.length;i++){
+				   stmt.executeUpdate("UPDATE "+projectname+" SET "
+				   		+ "codeLine='"+codeString[i]+"',"
+				   		+ "randomKey="+randomKeys.get(i)+" "
+				   		+ "WHERE lineKey="+i);
+			   }
+			   
+			   ResultSet te = stmt.executeQuery("SELECT codeLine FROM "+projectname);
+			   while(te.next()) {System.out.println(te.getString("codeLine"));}
+		   }
+		   catch(SQLException e){
 				   return;
 				   }
-			   e.printStackTrace();
-		   }
 	   }
 	   
 	   /**
@@ -186,29 +260,7 @@ public class UserDBaccess {
 	    * Tabbreite @param tab<br>
 	    * Zusammengesetzter String @return<br>
 	    */
-	   private String unite(String[] codeStrings, boolean random, int tab){
-		   if(random){
-			   String buffer;
-			   for(int i=codeStrings.length-1; i>0;i--){
-					int randomInt = new java.util.Random().nextInt(i);
-					buffer=codeStrings[randomInt];
-					codeStrings[randomInt]=codeStrings[i];
-					codeStrings[i]=buffer;
-				}
-		   }
-		   StringBuffer stringBuffer = new StringBuffer();
-		   for(String line: codeStrings){
-			   if(!line.trim().equals("")){
-				   // trim entfernt auch tabs, deshalb while schleife
-				   line=line.replaceAll("\t ", "\t");
-				   while(line.startsWith(" ")){
-					   line=line.replaceFirst(" ", "");
-				   }
-				   stringBuffer.append(line+"\n");
-			   }
-		   }
-		   return new String(stringBuffer);
-	   }
+	   
 	   
 	   public void updateDescription(String projectname, String description){
 		   try{
@@ -231,87 +283,19 @@ public class UserDBaccess {
 		   try {
 			   stmt = conn.createStatement();
 			   stmt.execute("UPDATE Projects SET pName='"+newName+"' WHERE pName='"+oldName+"'");
+			   stmt.execute("RENAME TABLE "+oldName+"TO"+newName);
 		   } catch (SQLException e) {
 			   // TODO Auto-generated catch block
 			   e.printStackTrace();
 		   }		   
 	   }
 	
-	   /**
-	    * Speichert das übergebene Projekt 
-	    * #depricated
-	    * 
-	    * @param codeString
-	    * @param projectname
-	    * @param linelength
-	    * @param projectID
-	    * @throws SQLException
-	    */
-	   public void saveProject(String[] codeString, String projectname, int linelength, final int projectID) throws SQLException{
-		   projectname=new String(projectname.trim());
-		   if(linelength < 1){
-			   linelength =MIN_line_length_Code;
-		   }
-		   else if(linelength >8000){
-			   linelength = MAX_line_length_Code;
-		   }
-		   // leerer Projektname ist unzulässig
-		   if(projectname.equals("")){
-			   return;
-		   }
-		   Statement stmt = conn.createStatement();
-		   
-		   //XXX doppelte Tabellennamen besser handeln
-		   
-		   // ----- Speichert Projektnamen Tabelle
-		   try{
-			   stmt.executeUpdate("CREATE TABLE Projects ( Projectname varchar("+length_projectName+") UNIQUE)");
-		   }
-		   catch(Exception e){ //Tabelle existiert bereits
-			   }
-		   
-		   try{stmt.execute("INSERT INTO Projects VALUES ('"+projectname+"')");
-		   }
-		   catch(Exception e){	//Projektname bereits vorhanden
-		   }
-		   
-		   // ----- Speichert normalen Code
-		   try{
-			   stmt.executeUpdate("DROP TABLE "+projectname);
-		   }
-		   catch(Exception e){ //falls Tabelle noch nicht existiert
-		   }
-		   stmt.executeUpdate("CREATE TABLE "+projectname+" (linenumber int primary key, codeline varchar("+linelength+"))");
-		   for(int i=0 ; i<codeString.length ; i++){
-				 stmt.executeUpdate("insert into "+projectname+" values ("+i+",'"+codeString[i]+"')");
-		   }
-		   
-		   // Zeilen zufällig anordnen
-		   String buffer;
-			for(int i=codeString.length-1; i>0;i--){
-				int randomInt = new java.util.Random().nextInt(i);
-				buffer=codeString[randomInt];
-				codeString[randomInt]=codeString[i];
-				codeString[i]=buffer;
-			}
-			// Speichert zufällig angeordnetetn Code
-			try{
-				stmt.executeUpdate("DROP TABLE "+projectname+"_mixed");
-			}
-			catch(Exception e){ // Falls Tabelle noch nicht existiert
-			}
-			stmt.executeUpdate("CREATE TABLE "+projectname+"_mixed (linenumber int primary key, codeline varchar("+linelength+"))");	
-			for(int i=0 ; i<codeString.length ; i++){
-				 stmt.executeUpdate("insert into "+projectname+"_mixed values ("+i+",'"+codeString[i]+"')");
-			}
-			
-			//-----------------------------testing------------------------------------
-		   
-	   }
+	   
+	   
+	   
+	   
 	   public void saveProjectSettings(String projectname, int tabSize, int grade) {
-		   if(projectname.equals("")){
-			   return;
-		   }
+		   
 		   try {
 			   Statement stmt = conn.createStatement();
 			   stmt.executeUpdate("UPDATE Projects SET tabSize="+tabSize+" WHERE pName='"+projectname+"'");
@@ -325,26 +309,68 @@ public class UserDBaccess {
 	   //-------------------------- Code aus Datenbank auslesen -------------------------------	   
 	   
 	   public String getCode(String projectname) throws SQLException{
-		   
+		   String codeString = new String();
 		   Statement stmt = conn.createStatement();
-		   ResultSet te = stmt.executeQuery("SELECT Code FROM Projects WHERE pName='"+projectname+"'");
-		   te.next();
+		   ResultSet te = stmt.executeQuery("SELECT codeLine FROM "+projectname);
+		  
+		   while(te.next()){
+			   //XXX evtl. muss noch ein leerzeichen eingefügt werden
+			  codeString = codeString + te.getString("codeLine");
+		   }
+		   //stmt.close();
 		   //System.out.println(te.getString("Code"));
-		   return te.getString("Code");  
+		   return codeString;  
 	   }
+	   
+	   public String[] getCodeArray(String projectname) throws SQLException{
+		   Statement stmt = conn.createStatement();
+		   ResultSet te = stmt.executeQuery("SELECT codeLine FROM "+projectname);
+		   ArrayList<String> codeString = new ArrayList<String>();
+		   
+		   while(te.next()){
+			   //XXX evtl. muss noch ein leerzeichen eingefügt werden
+			  codeString.add(te.getString("codeLine"));
+		   }
+		   
+		   //stmt.close();
+		   //System.out.println(te.getString("Code"));
+		   return codeString.toArray(new String[0]);
+	   }
+	   
+	   public ArrayList<Integer> getRandomKeys(String projectname){
+		   ArrayList<Integer> randomKeys = new ArrayList<Integer>();
+		   Statement stmt;
+		try {
+			stmt = conn.createStatement();
+		
+		   ResultSet rk = stmt.executeQuery("SELECT randomKey FROM "+projectname);
+		  
+		   while(rk.next()){
+			   randomKeys.add(rk.getInt("randomKey"));
+		   }
+		   return randomKeys;
+		} catch (SQLException e) {
+			
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return randomKeys;
+		}
+	   }
+	   
 	   public ArrayList <String> getCodeList(String projectname) throws SQLException{
 		   Statement stmt = conn.createStatement();
 		   
-		   ResultSet te = stmt.executeQuery("SELECT codeline FROM "+projectname);
+		   ResultSet te = stmt.executeQuery("SELECT codeLine FROM "+projectname);
 		   
 		   ArrayList<String> codeliste = new ArrayList<String>();
 		   
 		   while (te.next()) { 
-			   codeliste.add(te.getString("codeline"));
+			   codeliste.add(te.getString("codeLine"));
 			     }
 		   // String[] codeString;
 		   // codeString= codeliste.toArray(new String[0]);
 		   // return codeString;
+		   //stmt.close();
 		   return codeliste;
 	   }
 	   
@@ -364,6 +390,7 @@ public class UserDBaccess {
 			   while (te.next()) { 
 				   projectList.add(te.getString("pName"));
 				     }
+			   //stmt.close();
 			   return projectList;
 			   
 		   } catch (SQLException e1) {
@@ -392,6 +419,7 @@ public class UserDBaccess {
 		   stmt = conn.createStatement();
 		   te = stmt.executeQuery("SELECT Description FROM Projects WHERE pName='"+projectname+"'");
 		   te.next();
+		   //stmt.close();
 		   return te.getString("Description");
 	   }
 	   public int getTabSize(String projectname) {
@@ -401,6 +429,7 @@ public class UserDBaccess {
 			stmt = conn.createStatement();
 			te = stmt.executeQuery("SELECT tabsize FROM Projects WHERE pName='"+projectname+"'");
 			   te.next();
+			   //stmt.close();
 			   return te.getInt("tabsize");
 		   } catch (SQLException e) {
 			   // TODO Auto-generated catch block
@@ -409,22 +438,20 @@ public class UserDBaccess {
 		   return 0;
 		   
 		}
-	   private void createTable_Projects() throws SQLException{
+	   protected void createTable_Projects() throws SQLException{
 		   Statement stmt = conn.createStatement();
 		   // TODO: Allert soll erfolgen, der abfrägt, ob dies das erst Projekt ist, das man erstellt. Erst bei ja soll DROP TABLE erfolgen (sonst werden eventuell vorhandenen DAten verworfen)
-		   try{stmt.executeUpdate("DROP TABLE Projects");}
+		   try{stmt.executeUpdate("DROP TABLE Projects");
+		   //stmt.close();
+		   }
 		   catch(SQLException e){}
 		   stmt.executeUpdate("CREATE TABLE Projects ( " +
-		   		"pName varchar("+length_projectName+") UNIQUE, " +
-		   		"Code LONG VARCHAR, " +
-		   		"randomCode LONG VARCHAR, " +
-		   		"Description varchar("+length_projectDescription+"), " +
+		   		"pName varchar("+length_projectName+") UNIQUE, " +   		
+		   		"imports varchar(100) , " +  
+		   		"description varchar("+length_projectDescription+"), " +
 		   		"tabSize INT)");
-		   saveProject(
-				"TestProjekt", 
-				"Beispielcode 1 \nBeispielcode2\n\tBeispielcode3\n \t \t \t \t \t\t\t\t\t\t\t\t \tLanger" , 
-				0,
-				0);
+		   
+		   //stmt.close();
 	   }
 	   
 	   
@@ -433,9 +460,11 @@ public class UserDBaccess {
 	    * <b>!!!ACHTUNG!!!</b> Löscht eventuell vorhanenden Daten!
 	    * @throws SQLException
 	    */
-	   private void createTable_Students() throws SQLException{
+	   protected void createTable_Students() throws SQLException{
 		   Statement stmt = conn.createStatement();
-		   try{stmt.executeUpdate("DROP TABLE students");}
+		   try{stmt.executeUpdate("DROP TABLE students");
+		   //stmt.close();
+		   }
 		   catch(SQLException e){}
 		   stmt.executeUpdate("Create table students (" +
 		   		"id int primary key, " +
@@ -444,6 +473,7 @@ public class UserDBaccess {
 		   // insert 2 rows
 		   stmt.executeUpdate("insert into students values (1,'tom','tom')");
 		   stmt.executeUpdate("insert into students values (2,'peter','peter')");
+		   //stmt.close();
 	   }
 	   
 	   /**
@@ -451,9 +481,11 @@ public class UserDBaccess {
 	    * <b>!!!ACHTUNG!!!</b> Löscht eventuell vorhanenden Daten!
 	    * @throws SQLException
 	    */
-	   private void createTable_Teachers() throws SQLException{
+	   protected void createTable_Teachers() throws SQLException{
 		   Statement stmt = conn.createStatement();
-		   try{stmt.executeUpdate("DROP TABLE teachers");}
+		   try{stmt.executeUpdate("DROP TABLE teachers");
+		   //stmt.close();
+		   }
 		   catch(SQLException e){}
 		   stmt.executeUpdate("CREATE TABLE teachers (" +
 		   		"id int primary key, " +
@@ -462,6 +494,7 @@ public class UserDBaccess {
 		   stmt.executeUpdate("insert into teachers values (1,'Herr','Herr')");
 		   stmt.executeUpdate("insert into teachers values (2,'Frau','Frau')");
 		   stmt.executeUpdate("insert into teachers values (3,'TUM','TUM')");
+		   //stmt.close();
 	   }
 	   
 	   /**
@@ -483,6 +516,8 @@ public class UserDBaccess {
 		   try{
 			   Statement stmt = conn.createStatement();
 			   stmt.executeUpdate("DELETE FROM Projects WHERE pName = '"+projectname+"'");
+			   stmt.executeUpdate("Drop Table "+projectname);
+			   //stmt.close();
 			   return true;
 		   } catch(SQLException e){
 			   e.printStackTrace();
@@ -501,6 +536,7 @@ public class UserDBaccess {
 				ResultSet rs=stmt.executeQuery("SELECT * FROM Projects WHERE pName='"+projectName+"'");
 				rs.next();
 				if(rs.getString("pName").equals("")){
+					//stmt.close();
 					return false;
 				}
 			}

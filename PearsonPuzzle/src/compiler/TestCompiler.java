@@ -5,8 +5,9 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Vector;
 
 import javax.tools.*;
@@ -52,18 +53,47 @@ public class TestCompiler {
 //				javaSrcFile.delete();
 //		
 	
-		 public static boolean compileCode(Vector<String> solutionArray){
-			 String solutionString = new String();
-			 for(String line: solutionArray){
-				 solutionString=solutionString+line;
-			 }
-			 return compileCode(solutionString);
-		 }
-		 public static boolean compileCode(String src){
-			 src = "class testCode{ static { "+src+" }}";
-			 System.out.println(src);
-			 StringJavaFileObject javaFile = new StringJavaFileObject( "testCode", src );
+	private final static String DEFAULT_CLASS_NAME="testCode";
+	private static Vector<HashMap<String, String>> compileFailures;
+	
+	public TestCompiler(){
+		// TODO: Test Compiler ObjektKonstruktor verfassen
+		}
+	
+	public static Vector<HashMap<String,String>> getFailures(){
+		return compileFailures;
+	}
+
+		/**
+		 * Kompiliert eine Liste von Codezeilen.
+		 * @param solutionArray Liste von Codezeilen
+		 * @return Kompilieren erfolgreich
+		 */
+		public static boolean compileCode(Vector<String> solutionArray){
+			String solutionString = new String();
+				for(String line: solutionArray){
+					solutionString=solutionString+"\n"+line;
+				}
+			return compileCode(solutionString);
+		}
 		
+		public static boolean compileCode(String src){
+			 compileFailures = new Vector<HashMap<String, String>>();
+			 // Konflikte bezüglich des Klassennamens werden ausgeschlossen
+			 String className=new String(DEFAULT_CLASS_NAME);
+			 while(src.contains(className)){
+				 className=className+"_";
+			 }
+			 
+			 // Falls der Code keine Klasse enthält, wird hier eine generiert 
+			 if(!src.contains("class"))
+				 src = "class "+className+" { "+src+" }";
+			 
+			 // FIXME: Wenn der Code meherere Klassen enthält, kommt es im Moment zum Problem
+			 
+			 
+			
+			 StringJavaFileObject javaFile = new StringJavaFileObject( className, src );
 			 JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 			 DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
 			 StandardJavaFileManager fileManager = compiler.getStandardFileManager( diagnostics, null, null );
@@ -71,21 +101,24 @@ public class TestCompiler {
 			 CompilationTask task = compiler.getTask( null, fileManager, diagnostics, null, null, units );
 			 boolean success = task.call();
 		
-			 System.out.println( success ); // false
+			 
+			 System.out.println( success ); // Compilieren erfolgreich oder nicht
 
-			 // diagnose
+			 // Diagnose (bei aufgetretenem Fehler)
 			 for ( Diagnostic<?> diagnostic : diagnostics.getDiagnostics() )
 			 {
-				 System.out.printf( "Kind: %s%n", diagnostic.getKind() );
-				 System.out.printf( "Quelle: %s%n", diagnostic.getSource() );
-				 System.out.printf( "Code und Nachricht: %s: %s%n", diagnostic.getCode(), diagnostic.getMessage( null ) );
-				 System.out.printf( "Zeile: %s%n", diagnostic.getLineNumber() );
-				 System.out.printf( "Position/Spalte: %s/%s%n", diagnostic.getPosition(),
-		                                                 diagnostic.getColumnNumber() );
-				 System.out.printf( "Startpostion/Endposition: %s/%s%n", diagnostic.getStartPosition(),
-		                                                          diagnostic.getEndPosition() );
-				 System.out.println();
-				 return false;
+				 HashMap <String, String> compileFailure = new HashMap<String, String>(9);
+				 compileFailure.put("Kind", ""+diagnostic.getKind());
+				 compileFailure.put("Quelle", ""+diagnostic.getSource());
+				 compileFailure.put("Code", ""+diagnostic.getCode());
+				 // TODO: Fehlerbericht anpassen (Nachricht)
+				 compileFailure.put("Nachricht",""+diagnostic.getMessage( null ) );
+				 compileFailure.put("Zeile", ""+diagnostic.getLineNumber() );
+				 compileFailure.put("Position", ""+diagnostic.getPosition());
+				 compileFailure.put("Spalte", ""+diagnostic.getColumnNumber() );
+				 compileFailure.put("Startpostion", ""+diagnostic.getStartPosition());
+				 compileFailure.put("Endposition", ""+diagnostic.getEndPosition() );
+				 compileFailures.add(compileFailure);
 			 }
 		
 			 try {
@@ -101,13 +134,24 @@ public class TestCompiler {
 				 return false;
 			 }
 			 try {
-				 Class.forName( "testCode", true, classLoader );
-				 // die Klasse testCode muss STERBEEEEEEEEEN!!!!! und zwar genau hier!!!!
+				 Class.forName( className, true, classLoader );
+				 deleteTestClass(className);
 				 
 			 } catch (ClassNotFoundException e) {
 				 return false;
 			 }    // Java Compiler API 2
 			 return true;
+		 }
+		 
+		 /**
+		  * Klassendatei wird gelöscht, falls sie existiert.
+		  * @param className Name der Klasse (Dateiname = className.class)
+		  */
+		 private static void deleteTestClass(String className){
+			 File file = new File(className+".class");
+			 if(file.exists()){
+				 file.delete();
+			 }
 		 }
 }
 

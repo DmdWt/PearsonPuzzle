@@ -39,6 +39,8 @@ public class ProjectConfiguration extends JView{
 	
 	public ProjectConfiguration(Model model) {
 		super(model);
+		menu = new MenuTeacher(1);
+		this.addMenuToFrame(menu);
 		setupConfigPanel();
 		draw();
 	}
@@ -121,8 +123,9 @@ public class ProjectConfiguration extends JView{
 					groupName="Gruppe "+(char)(i+65);
 				else
 					groupName="Gruppe "+(char)(i%26+65)+(i-i%26)/26+1;
-				tableModel.addColumn(groupName, model.getGroupMatrix().get(i));
+				tableModel.addColumn(groupName, model.getGroupMatrix().get(i));			
 			}	
+			
 		}
 		tableModel.addColumn("Codezeile", model.getCodeVector());
 		tableModel.addColumn("Testausdruck", model.getTestExpressionsVector());
@@ -190,6 +193,7 @@ public class ProjectConfiguration extends JView{
 		saveGroup.addActionListener(controller);
 		cancelSelection.addActionListener(controller);
 		tableModel.addTableModelListener(controller);
+		menu.addActionListener(controller);
 	}
 
 	@Override

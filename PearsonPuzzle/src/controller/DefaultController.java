@@ -67,14 +67,12 @@ public class DefaultController extends Controller {
 		}
 		switch(cmd){
 			case SubmitPassword:
-				if(view.getClass().equals(LoginView.class)){
+				if(view.getClass().equals(LoginView.class))
 					((LoginView)view).submitChangeToController();
-				}
 				break;
 			case EditProject:
-				if(model.getProjectListID()==null){
+				if(model.getProjectListID()==null)
 					view.showMessage(Allert.noProjectSelected);
-				}
 				else{
 					view.quitView();
 					this.view=new TextEditor(model);
@@ -88,9 +86,8 @@ public class DefaultController extends Controller {
 				view.addController(this);
 				break;
 			case OpenProject:
-				if(model.getProjectListID()==null){
+				if(model.getProjectListID()==null)
 					view.showMessage(Allert.noProjectSelected);
-				}
 				else{
 					view.quitView();
 					this.view=new CodeSortView(model);
@@ -99,12 +96,10 @@ public class DefaultController extends Controller {
 				break;
 			case ProjectList:
 				view.quitView();
-				if(model.getAccessGroup().equals(AccessGroup.PUPIL)){
+				if(model.getAccessGroup().equals(AccessGroup.PUPIL))
 					this.view= new PupilView(model);
-				}
-				else{
+				else
 					this.view= new TeacherView(model);
-				}
 				view.addController(this);
 				break;
 			case Admin:
@@ -154,9 +149,8 @@ public class DefaultController extends Controller {
 			case DeleteProject:
 				if(view.getClass().equals(TeacherView.class) 
 						&& model.getAccessGroup().equals(AccessGroup.TEACHER)){
-					if(model.getProjectListID()==null){
+					if(model.getProjectListID()==null)
 						view.showMessage(Allert.noProjectSelected);
-					}
 					else{
 						view.allert("Sind Sie sicher, dass Sie das Projekt löschen wollen?");
 						// TODO: Auswahlmöglichkeit zu Allert hinzufügen
@@ -169,9 +163,8 @@ public class DefaultController extends Controller {
 				}
 				break;
 			case SetConfig:
-				if(model.getAccessGroup()==AccessGroup.TEACHER){
+				if(model.getAccessGroup()==AccessGroup.TEACHER)
 					model.updateConfig();
-				}
 				break;
 			case ConfigureProject:
 				if(model.getAccessGroup()==AccessGroup.TEACHER){
@@ -179,6 +172,7 @@ public class DefaultController extends Controller {
 					this.view = new ProjectConfiguration(model);
 					view.addController(this);
 				}
+				break;
 			case SetTextConfig:
 				if(view.getClass().equals(TextEditor.class)){
 					ArrayList <JTextField> inputFields = (((TextEditor)view).getInputComponents()); 
@@ -207,10 +201,12 @@ public class DefaultController extends Controller {
 				break;
 			case Compile:
 				TestCompiler.compileCode(model.getSolutionStrings());
+				model.setCompilerFailures(TestCompiler.getFailures());
 				break;
 			case TestCode:
 				System.out.println(model.getSollution());
-				if(model.isExactOrder())
+				//model.testSolution();
+				if(model.testSolution())
 					System.out.println("Herzlichen Glückwunsch, richtige Reihenfolge!");
 				else
 					System.out.println("Reihenfolge nicht 1:1, Test auf Korrektheit folgt");
@@ -385,8 +381,6 @@ public class DefaultController extends Controller {
 	        		model.setGroupMatrixEntry(row, column, data);
 	        	}
 	        }
-		}
-		// TODO Auto-generated method stub
-		
+		}		
 	}
 }

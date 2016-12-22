@@ -22,6 +22,8 @@ public class ConfigEditor extends JView{
 	public ConfigEditor(Model model) {
 		super(model);
 		setupConfigPanel();
+		menu = new MenuTeacher();
+		this.addMenuToFrame(menu);
 		draw();
 	}
 	
@@ -44,6 +46,7 @@ public class ConfigEditor extends JView{
 	@Override
 	public void addController(Controller controller){
 		dbReset.addItemListener(controller);
+		menu.addActionListener(controller);
 	}
 	
 	@Override

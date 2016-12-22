@@ -24,7 +24,7 @@ public abstract class JView implements Observer {
 	// BorderLayout mit 5 horizontalem und 1 vertikalem Versatz zwischen den Komponenten
 	// mainPanel = new JPanel(new BorderLayout(5,1));
 	protected static JPanel mainPanel = new JPanel(new BorderLayout(5,1));
-	protected Menu menu;
+	protected static Menu menu;
 	protected Model model;
 	private Controller controller;
 	public JView(Model model){
@@ -33,7 +33,6 @@ public abstract class JView implements Observer {
 			// XXX: Herangehensweise ändern (protected static ist nicht optimal
 			this.model=model;
 			model.addObserver(this);
-			quitView();
 		}
 		
 		
@@ -61,11 +60,6 @@ public abstract class JView implements Observer {
 		}
 		public void addMenuToFrame(JMenuBar menuBar){
 			frame.setJMenuBar(menuBar);
-		}
-		protected void setMainPanel(JPanel mainPanel){
-			this.mainPanel=mainPanel;
-			frame.add(mainPanel);
-			draw();
 		}
 		
 		/**

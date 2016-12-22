@@ -2,6 +2,7 @@ package model;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -10,6 +11,9 @@ import java.util.Observable;
 import java.util.Vector;
 
 import org.junit.runner.notification.Failure;
+
+import controller.DCCommand;
+import model.DB.DBModelTransfer;
 
 /**
  * Klasse dient dazu, alle für die Benutzer notwendigen Daten einzulesen, zu
@@ -23,7 +27,8 @@ import org.junit.runner.notification.Failure;
 public class Model extends Observable {
 	private String username;
 	
-	private Vector<String> codeVector;
+	private Vector<String> codeVector_random;
+	private Vector<String> codeVector_normal;
 	
 	// Bei einer LinkedHaspMap ist auch die Reihenfolge der eingefügten Elemente einsehbar.
 	// Die linked Hash Map soll NICHT frei verfügbar sein 
@@ -38,37 +43,42 @@ public class Model extends Observable {
 	
 	private List<String> projectList;
 	private Vector<String> projectVector;
+	private Vector<Integer> tabVector;	// TODO: Tab Vector nutzen 
 	private Integer projectID;
 	private int tabSize;
 	private boolean randomMode;
 	private boolean resetDB;
 	private int grade;
-	private UserDBaccess userDBaccess;
+	private DBModelTransfer dBModelTransfer;
 	private AccessGroup accessGroup;
 	
 	private LinkedList<Failure> jUnitFailures;
+	private Vector<HashMap<String, String>> compileFailures;
+	private LinkedList<Boolean> groupFailures;
 
 	public Model() {
 		jUnitFailures=new LinkedList<Failure>();
+		compileFailures = new Vector<HashMap<String,String>>();
+		groupFailures = new LinkedList<Boolean>();
+		dBModelTransfer = new DBModelTransfer();
+
 		// Datenbankverbindung wird aufgebaut
-		try {
-			userDBaccess = new UserDBaccess();
-			//userDBaccess.resetAll();
-		} catch (SQLException e) {
-			if(e.getSQLState().equals("XJ040"))
-				// TODO Ausgabe, dass bereits eine Programminstanz gestartet wurde
-				System.out.println("Nichts wie raus hier!!!!\n");
-			else
-				e.printStackTrace();
-			}
+		
 		
 		// Holt Daten aus der Datenbank
+//		try {
+//			dBModelTransfer.resetAll();
+//		} catch (SQLException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 		this.fetchAll();
 		
 		// Default Werte werden gesetzt
 		this.tabSize = 0;
 		this.randomMode = true;
 		this.grade = 0;
+		
 	}
 
 	// ------------------------------------ Getter und Setter ------------------------------
@@ -98,6 +108,9 @@ public class Model extends Observable {
 			return tabSize;
 		return 0;
 	}
+	public Vector<Integer> getTabVector(){
+		return tabVector;
+	}
 
 	// --- Zufallsmodus
 	public void setRandomMode(boolean random) {
@@ -113,9 +126,9 @@ public class Model extends Observable {
 		this.accessGroup=accessGroup;		
 	}
 	public AccessGroup getAccessGroup(String username, char[] password) {
-		if (userDBaccess.lookUpstudent(username, password)) {
+		if (dBModelTransfer.lookUpstudent(username, password)) {
 			return AccessGroup.PUPIL;
-		} else if (userDBaccess.lookUpteacher(username, password)) {
+		} else if (dBModelTransfer.lookUpteacher(username, password)) {
 			return AccessGroup.TEACHER;
 		} else
 			return AccessGroup.UNKNOWN;
@@ -181,10 +194,10 @@ public class Model extends Observable {
 	}
 				// Projektvektor
 	public Vector<String> getCodeVector() {
-		return codeVector;
+		return codeVector_random;
 	}
 	public void setCodeVector(Vector<String> codeVector) {
-		this.codeVector = codeVector;
+		this.codeVector_random = codeVector;
 	}
 	
 	// Projekt Sequenz Vektor
@@ -204,7 +217,7 @@ public class Model extends Observable {
 	// Testrelevante Daten
 	public void addTestGroup(){
 		Vector<Integer> codeGroup=new Vector<Integer>();
-		for (Iterator<String> iterator = codeVector.iterator(); iterator.hasNext();) {
+		for (Iterator<String> iterator = codeVector_random.iterator(); iterator.hasNext();) {
 			iterator.next();
 			codeGroup.add(new Integer(0));
 		}
@@ -227,19 +240,19 @@ public class Model extends Observable {
 	}
 
 	// Code zum puzzeln
-	private String[] getRandomCode() {
-		String[] parts = projectCode.split("\n");
-		if (randomMode) {
-			String buffer;
-			for (int i = parts.length - 1; i > 0; i--) {
-				int randomInt = new java.util.Random().nextInt(i);
-				buffer = parts[randomInt];
-				parts[randomInt] = parts[i];
-				parts[i] = buffer;
-			}
-		}
-		return parts;
-	}
+//	private String[] getRandomCode() {
+//		String[] parts = projectCode.split("\n");
+//		if (randomMode) {
+//			String buffer;
+//			for (int i = parts.length - 1; i > 0; i--) {
+//				int randomInt = new java.util.Random().nextInt(i);
+//				buffer = parts[randomInt];
+//				parts[randomInt] = parts[i];
+//				parts[i] = buffer;
+//			}
+//		}
+//		return parts;
+//	}
 	
 	// --- Vom Schüler zusammengepuzzelter Code
 	
@@ -248,9 +261,8 @@ public class Model extends Observable {
 	}
 	public Vector<String> getSolutionStrings(){
 		Vector<String> solution = new Vector<String>(codeMap.size());
-		int i=0;
 		for(Integer index: sortedCode){
-			solution.add(codeVector.get(index));
+			solution.add(codeVector_random.get(index));
 		}
 		return solution;
 	}
@@ -265,13 +277,30 @@ public class Model extends Observable {
 	public void removeInSollution(int index){
 		sortedCode.remove(index);
 	}
-	public boolean isExactOrder(){
-		String sollutionString = new String();
-		for (String string : getSolutionStrings()){
-			sollutionString=sollutionString+string+"\n";
-		}
-		if(sollutionString.equals(projectCode))
-		 	return true;
+	public boolean testSolution(){
+		Boolean result = OrderFailures.testOrder_simple(this, projectCode);
+		result = result & OrderFailures.testOrder_groups(sortedCode, groupFailures, codeLine_GroupMatrix, codeMap, codeVector_normal);
+		setChanged();
+		notifyObservers(DCCommand.TestCode);
+		return result;
+//		
+//		String sollutionString = new String();
+//		for (String string : getSolutionStrings()){
+//			sollutionString=sollutionString+string+"\n";
+//		}
+//		if(sollutionString.equals(projectCode))
+//		 	return true;
+//		return false;
+	}
+	/**
+	 * Gibt Aufschluss, ob die Lösungsmatrix die Codezeile enthält.
+	 * Leerzeichen und Tabs werden nicht berücksichtigt.
+	 * @param codeLine Codezeile, die geprüft werden soll
+	 * @return Lösungsmatrix enthält Codezeile
+	 */
+	public boolean codeContains(String codeLine){
+		if(codeMap.containsValue(codeLine.trim()))
+			return true;
 		return false;
 	}
 	
@@ -288,6 +317,18 @@ public class Model extends Observable {
 	 */
 	public void addjUnitFailure(Failure failure) {
 		this.jUnitFailures.add(failure);
+	}
+
+	/**
+	 * @return the compileFailures
+	 */
+	public Vector<HashMap<String,String>> getCompileFailures() {
+		return compileFailures;
+	}
+	public void setCompilerFailures(Vector<HashMap<String, String>> failures) {
+		this.compileFailures = failures;
+		setChanged();
+		notifyObservers(DCCommand.Compile);
 	}
 
 	// ------------------------------------ Datenbankinteraktionen----------------------------------------
@@ -316,19 +357,19 @@ public class Model extends Observable {
 		// ---- Prüfen, ob bereits ein gleichnamiges Projekt existiert 
 		if(projectID==null 
 				|| !projectName.equals(projectList.get(projectID))){
-			if( userDBaccess.projectExists(projectName)){
+			if( dBModelTransfer.projectExists(projectName)){
 				return false;
 			}
 		}
 		
 		// ---- Wenn der Projektname geändert wurde, Projektnamen updaten
 		else if(!projectName.equals(projectList.get(projectID))){
-			userDBaccess.renameProject(projectList.get(projectID), projectName);
+			dBModelTransfer.renameProject(projectList.get(projectID), projectName);
 		}
 		
 		// ----- Projekt speichern
-		userDBaccess.saveProject(projectName, codeString, 0, 0);
-		userDBaccess.updateDescription(projectName, projectDescription);
+		dBModelTransfer.saveProject(projectName, codeString,"","", 0);
+		dBModelTransfer.updateDescription(projectName, projectDescription);
 		
 		// TODO: Test, ob erfolgreich gespeichert wurde
 		this.fetchProjects();
@@ -342,7 +383,7 @@ public class Model extends Observable {
 	
 	public void saveProjectSettings(){
 		if(projectID!=null)
-			userDBaccess.saveProjectSettings(projectList.get(projectID), tabSize, grade);
+			dBModelTransfer.saveProjectSettings(projectList.get(projectID), tabSize, grade);
 	}
 
 	/**
@@ -350,7 +391,7 @@ public class Model extends Observable {
 	 * Löschen_erfolgreich@return
 	 */
 	public boolean removeProject() {
-		if(userDBaccess.delete(projectList.get(projectID))){
+		if(dBModelTransfer.delete(projectList.get(projectID))){
 			this.selectProject(null);
 			this.fetchAll();
 			return true;
@@ -364,7 +405,7 @@ public class Model extends Observable {
 	public void updateConfig() {
 		if(isResetDB()){
 			try {
-				userDBaccess.resetAll();
+				dBModelTransfer.resetAll();
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -378,7 +419,7 @@ public class Model extends Observable {
 	 */
 	private void fetchProjects() {
 		List <String> projects;
-		projects = userDBaccess.getProjects(grade);
+		projects = dBModelTransfer.getProjects(grade);
 		List<String> projectList = new ArrayList<String>();
 		projectVector = new Vector<String>();
 		for (String line : projects) {
@@ -394,8 +435,8 @@ public class Model extends Observable {
 	private void fetchProjectSettings(){
 		if(projectID!=null){
 			try{
-				this.projectDescription = userDBaccess.getProjectDescription(projectList.get(projectID));
-				this.tabSize = userDBaccess.getTabSize(projectList.get(projectID));
+				this.projectDescription = dBModelTransfer.getProjectDescription(projectList.get(projectID));
+				this.tabSize = dBModelTransfer.getTabSize(projectList.get(projectID));
 				}
 			catch(SQLException e){
 				this.projectDescription="Noch keine Beschreibung vorhanden";
@@ -413,10 +454,16 @@ public class Model extends Observable {
 		if(projectID!=null){
 			if(projectID!=null){
 			try {
-				this.projectCode = userDBaccess.getCode(projectList.get(projectID));
-				String[] stringField = this.getRandomCode();
+				System.out.println("jetzt fetchProjectCode");
+				String[] strings = dBModelTransfer.getCodeArray(projectList.get(projectID));
+				codeVector_normal = new Vector<String>();
+				for(String string:strings){
+					codeVector_normal.add(string);
+				}
 				
-				this.codeVector = new Vector<String>();
+				String[] stringField = dBModelTransfer.getRandomCodeArray(projectList.get(projectID));
+				
+				this.codeVector_random = new Vector<String>();
 				this.testExpressionsVector = new Vector<String>();
 				this.codeMap = new LinkedHashMap<String, Integer>();
 				this.sortedCode= new LinkedList<Integer>();
@@ -425,10 +472,19 @@ public class Model extends Observable {
 				Vector<Integer> codeLine_Group= new Vector<Integer>();
 				for(String line: stringField){
 					
-					// FIXME: save list wird eventuell nicht mehr benötigt
-					codeVector.add(line);
+					// Dies ist notwendig, damit im Text sort view die Tabs richtig dargestellt werden.
+					String tab;
+					if(tabSize==0)
+						tab="";
+					else
+						tab=" ";
+					for(int i=0;i<tabSize;i++){
+						tab=tab+" ";
+					}
+					String bString = line.replaceAll("\t", tab);
+					codeVector_random.add(bString);
 					testExpressionsVector.add(new String());
-					codeMap.put(line.trim(), codeVector.size()-1);
+					codeMap.put(line.trim(), codeVector_random.size()-1);
 					codeLine_Group.add(new Integer(0));
 				}		
 				codeLine_GroupMatrix.add(codeLine_Group);
@@ -449,7 +505,6 @@ public class Model extends Observable {
 			setChanged();
 			notifyObservers();
 		}
-
 		
 }
 
@@ -466,12 +521,12 @@ public class Model extends Observable {
 	private int tabSize;
 	private boolean randomMode;
 	private int grade;
-	private UserDBaccess userDBaccess;
+	private dBModelTransfer dBModelTransfer;
 	private AccessGroup accessGroup;
 
 	public Model() {
 		try {
-			userDBaccess = new UserDBaccess();
+			dBModelTransfer = new dBModelTransfer();
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -538,7 +593,7 @@ public class Model extends Observable {
 	
 	private ArrayList<String> fetchProject(){
 		//try {
-		//	return userDBaccess.getProject("DefaultProjekt");
+		//	return dBModelTransfer.getProject("DefaultProjekt");
 		//} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			ArrayList<String> failure= new ArrayList<String>();
@@ -559,9 +614,9 @@ public class Model extends Observable {
 	// TODO: in accessGroup auslagern
 	public AccessGroup getAccessGroup(String username, char[] password) {
 
-		if (userDBaccess.lookUpstudent(username, password)) {
+		if (dBModelTransfer.lookUpstudent(username, password)) {
 			return AccessGroup.PUPIL;
-		} else if (userDBaccess.lookUpteacher(username, password)) {
+		} else if (dBModelTransfer.lookUpteacher(username, password)) {
 			return AccessGroup.TEACHER;
 		} else
 			return AccessGroup.UNKNOWN;
@@ -638,7 +693,7 @@ public class Model extends Observable {
 		projectCode = new String(codeString);
 		String[] projectArray = projectCode.split("\n");
 		try {
-			userDBaccess.saveProject(projectArray, projectname, linelength, 0);
+			dBModelTransfer.saveProject(projectArray, projectname, linelength, 0);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}

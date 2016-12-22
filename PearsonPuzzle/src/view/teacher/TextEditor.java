@@ -43,7 +43,7 @@ public class TextEditor extends JView{
 		save=new JButton("Speichern");
 		configure = new JButton("Projekt konfigurieren");
 		configFields = new ArrayList <JTextField>();
-		menu = new MenuTeacher();
+		menu = new MenuTeacher(0);
 		this.addMenuToFrame(menu);
 		
 		textArea = new JTextArea(model.getProjectCode());
