@@ -46,7 +46,8 @@ public class TestCompiler {
 //				try {
 //					Class.forName( "B", true, classLoader );
 //				} catch (ClassNotFoundException e) {
-//					// TODO Auto-generated catch block
+//					// TODO Auto-
+//	generated catch block
 //					e.printStackTrace();
 //				}    // Java Compiler API
 //

@@ -200,7 +200,8 @@ public class UserDBaccess {
 	 */
 	   
 	   public void createProject(String projectname, String[] codeString, ArrayList<Integer> randomKeys, int linelength) {
-		   
+
+		   //System.out.println("createProject");
 		   try{
 			   Statement stmt = conn.createStatement();
 			   try{
@@ -230,25 +231,25 @@ public class UserDBaccess {
 	   
 	   
 	   
-	   public void updateProject(String projectname, String[] codeString, ArrayList<Integer> randomKeys, int linelength) {
-		   
-		   try{
-			   Statement stmt = conn.createStatement();			   
-			   stmt.executeUpdate("ALTER TABLE "+projectname+" ALTER COLUMN codeLine SET DATA TYPE varchar("+linelength+")");
-			   for(int i = 0; i < codeString.length;i++){
-				   stmt.executeUpdate("UPDATE "+projectname+" SET "
-				   		+ "codeLine='"+codeString[i]+"',"
-				   		+ "randomKey="+randomKeys.get(i)+" "
-				   		+ "WHERE lineKey="+i);
-			   }
-			   
-			   ResultSet te = stmt.executeQuery("SELECT codeLine FROM "+projectname);
-			   while(te.next()) {System.out.println(te.getString("codeLine"));}
-		   }
-		   catch(SQLException e){
-				   return;
-				   }
-	   }
+//	   public void updateProject(String projectname, String[] codeString, ArrayList<Integer> randomKeys, int linelength) {
+//		   
+//		   try{
+//			   Statement stmt = conn.createStatement();			   
+//			   stmt.executeUpdate("ALTER TABLE "+projectname+" ALTER COLUMN codeLine SET DATA TYPE varchar("+linelength+")");
+//			   for(int i = 0; i < codeString.length;i++){
+//				   stmt.executeUpdate("UPDATE "+projectname+" SET "
+//				   		+ "codeLine='"+codeString[i]+"',"
+//				   		+ "randomKey="+randomKeys.get(i)+" "
+//				   		+ "WHERE lineKey="+i);
+//			   }
+//			   
+//			   ResultSet te = stmt.executeQuery("SELECT codeLine FROM "+projectname);
+//			   while(te.next()) {//System.out.println(te.getString("codeLine"));}
+//		   }
+//		   catch(SQLException e){
+//				   return;
+//				   }
+//	   }
 	   
 	   /**
 	    * Aus dem String[] wird wieder ein String. Dieser wird entweder zufällig zusammengesetzt <br>
@@ -279,6 +280,7 @@ public class UserDBaccess {
 	    * Neuer Projektname@param newName
 	    */
 	   public void renameProject(String oldName, String newName){
+		   //System.out.println("renameProject");
 		   Statement stmt;
 		   try {
 			   stmt = conn.createStatement();
@@ -297,6 +299,7 @@ public class UserDBaccess {
 	   public void saveProjectSettings(String projectname, int tabSize, int grade) {
 		   
 		   try {
+			   //System.out.println("saveProjectSettings");
 			   Statement stmt = conn.createStatement();
 			   stmt.executeUpdate("UPDATE Projects SET tabSize="+tabSize+" WHERE pName='"+projectname+"'");
 		   		} catch (SQLException e) {
@@ -309,6 +312,8 @@ public class UserDBaccess {
 	   //-------------------------- Code aus Datenbank auslesen -------------------------------	   
 	   
 	   public String getCode(String projectname) throws SQLException{
+
+		   //System.out.println("getcode");
 		   String codeString = new String();
 		   Statement stmt = conn.createStatement();
 		   ResultSet te = stmt.executeQuery("SELECT codeLine FROM "+projectname);
@@ -318,11 +323,13 @@ public class UserDBaccess {
 			  codeString = codeString + te.getString("codeLine");
 		   }
 		   //stmt.close();
-		   //System.out.println(te.getString("Code"));
+		   ////System.out.println(te.getString("Code"));
 		   return codeString;  
 	   }
 	   
 	   public String[] getCodeArray(String projectname) throws SQLException{
+
+		   //System.out.println("getcodearray");
 		   Statement stmt = conn.createStatement();
 		   ResultSet te = stmt.executeQuery("SELECT codeLine FROM "+projectname);
 		   ArrayList<String> codeString = new ArrayList<String>();
@@ -333,7 +340,7 @@ public class UserDBaccess {
 		   }
 		   
 		   //stmt.close();
-		   //System.out.println(te.getString("Code"));
+		   ////System.out.println(te.getString("Code"));
 		   return codeString.toArray(new String[0]);
 	   }
 	   
@@ -358,6 +365,7 @@ public class UserDBaccess {
 	   }
 	   
 	   public ArrayList <String> getCodeList(String projectname) throws SQLException{
+		   //System.out.println("getcodelist");
 		   Statement stmt = conn.createStatement();
 		   
 		   ResultSet te = stmt.executeQuery("SELECT codeLine FROM "+projectname);
@@ -381,6 +389,7 @@ public class UserDBaccess {
 	    * ProjektListe@return
 	    */
 	   public ArrayList <String> getProjects(int grade) {
+		   //System.out.println("getprojects");
 		   Statement stmt;
 		   ResultSet te;
 		   try {
@@ -414,6 +423,8 @@ public class UserDBaccess {
 	    * @throws SQLException
 	    */
 	   public String getProjectDescription(String projectname) throws SQLException{
+
+		   //System.out.println("getprojectdescription");
 		   Statement stmt;
 		   ResultSet te;
 		   stmt = conn.createStatement();

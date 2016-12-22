@@ -454,13 +454,15 @@ public class Model extends Observable {
 		if(projectID!=null){
 			if(projectID!=null){
 			try {
-				System.out.println("jetzt fetchProjectCode");
 				String[] strings = dBModelTransfer.getCodeArray(projectList.get(projectID));
 				codeVector_normal = new Vector<String>();
+				String pCode= new String();
 				for(String string:strings){
 					codeVector_normal.add(string);
+					pCode=pCode+"\n"+string;
 				}
-				
+				projectCode=pCode;
+				System.out.println(codeVector_normal.toString());
 				String[] stringField = dBModelTransfer.getRandomCodeArray(projectList.get(projectID));
 				
 				this.codeVector_random = new Vector<String>();
