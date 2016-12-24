@@ -31,8 +31,81 @@ public class UserDBaccess {
 		 return length_projectName;
 	 }
 	 
+
+		//------------------------------------------------------------------------------------
+		//------------------------------- Teacher Student Tabellen ---------------------------
+		//------------------------------------------------------------------------------------
 	   
-	   
+//	 Fügt nutzer mit namen username und passwort password zu der Tabelle table hinzu
+	 public boolean addUser(String tablename, String username, String password){
+		 Statement stmt;
+		try {
+			stmt = conn.createStatement();
+		   stmt.executeUpdate("INSERT INTO "+tablename+" values ('"+username+"','"+password+"')");
+		   return true;}
+		   catch(SQLException e){	//username bereits vorhanden => false (falls handling erforderlich)
+			   if(e.getSQLState().equals("23505")){
+				   
+				   return false;
+			   }
+			   return false;
+		   }
+		 
+	 }
+	 
+//	 Sagt ob eine Person mit Namen username in einer der Tabellen students oder teacher existiert
+	 public boolean doesUserExists(String username){
+		 try{	  
+			   Statement stmt = conn.createStatement();
+			   ResultSet rs = stmt.executeQuery("SELECT * FROM students WHERE username= '" + username+"'");	
+			   ResultSet te = stmt.executeQuery("SELECT * FROM teachers WHERE username= '" + username+"'");	
+			   
+				   //stmt.close();
+				   return rs.next()||te.next();
+			   
+		   }
+		   catch(Exception e){
+			   return false;
+		   }
+		   
+	   }
+	 
+	 //gibt alle Namen der Tabelle table zurück
+	 public Vector<String> getNames(String table){
+		 Vector<String> namevector = new Vector<String>();
+		 try{	  
+			   Statement stmt = conn.createStatement();
+			  
+			   ResultSet rs = stmt.executeQuery("SELECT username FROM "+table);
+			  
+				while(rs.next()){
+					namevector.add(rs.getString("username"));
+				}
+			   
+		   }
+		   catch(Exception e){
+		   }
+		 return namevector;
+	 }
+	 
+	 public boolean deleteUser(String username, String table){
+		 try{	  
+			   Statement stmt = conn.createStatement();
+			  
+		 stmt.executeUpdate("DELETE FROM "+table+" WHERE username = '"+username+"'");
+		 return true;
+		 }
+		 catch(Exception e){
+			 return false;
+			
+		 }
+	 }
+	 
+
+	 
+	 
+	 
+	 
 	   // ------------------------ Nutzername und Passwortvergleich -------------------------------
 	   
 	   
@@ -43,14 +116,8 @@ public class UserDBaccess {
 		   try{	  
 			   Statement stmt = conn.createStatement();
 			   ResultSet rs = stmt.executeQuery("SELECT * FROM students WHERE username= '" + name + "' AND password = '"+passwordstring+"'");	
-			   if(!rs.next() ){
-				   //stmt.close();
-				   return false;
-			   }
-			   else{
-				   //stmt.close();
-				   return true;
-			   }		     
+			 //stmt.close();
+			   return rs.next();		     
 			   
 		   }
 		   catch(Exception e){
@@ -65,12 +132,8 @@ public class UserDBaccess {
 			   
 			   Statement stmt = conn.createStatement();
 			   ResultSet te = stmt.executeQuery("SELECT * FROM teachers WHERE username = '" + name + "' AND password = '"+passwordstring+"'");	
-			     if(!te.next() ){
-					 //stmt.close();
-			    	 return false;}
-			     else{
-					 //stmt.close();
-			    	 return true;}
+			 //stmt.close();
+			   return te.next();
 		   } catch(Exception e){
 			   		return false;}
 	   }
@@ -126,6 +189,11 @@ public class UserDBaccess {
 		   //stmt.close();
 	   }
 	   
+	   
+
+		//-----------------------------------------------------------------------------
+		//------------------------------- Projekte Tabellen ---------------------------
+		//-----------------------------------------------------------------------------
 	   
 	   
 	   /**
@@ -323,7 +391,7 @@ public class UserDBaccess {
 			  codeString = codeString + te.getString("codeLine");
 		   }
 		   //stmt.close();
-		   ////System.out.println(te.getString("Code"));
+		   //System.out.println(te.getString("Code"));
 		   return codeString;  
 	   }
 	   
@@ -340,7 +408,7 @@ public class UserDBaccess {
 		   }
 		   
 		   //stmt.close();
-		   ////System.out.println(te.getString("Code"));
+		   //System.out.println(te.getString("Code"));
 		   return codeString.toArray(new String[0]);
 	   }
 	   
@@ -381,6 +449,73 @@ public class UserDBaccess {
 		   //stmt.close();
 		   return codeliste;
 	   }
+	   
+	   
+//	   fügt eine einzelne neue Reihenfolge hinzu
+	   public boolean addOrder(String projectname, Vector<Integer> neworder){
+		   boolean success = false;
+		   try {
+			Statement stmt = conn.createStatement();
+			// Hinzufügen der neuen Spalte order_X 
+			
+			int ordernumber=0;
+			for(int i = 0;!success;i++){
+			   try{
+				   stmt.executeUpdate("ALTER TABLE "+projectname+" ADD COLUMN order_"+i+" int");
+				   success = true;
+				   ordernumber=i;
+			   }catch(Exception e){}
+			}
+			
+			for(int j = 0; j < neworder.size();j++){
+				   stmt.executeUpdate("UPDATE "+projectname+" SET "
+				   		+ "order_"+ordernumber+"="+neworder.get(j).intValue()+""
+				   		+ "WHERE lineKey="+j);
+				   
+			   }
+			
+		} 	catch (SQLException e1) {
+				// TODO Auto-generated catch block
+			System.out.println("es gab ein Problem bei addOrder.");
+				e1.printStackTrace();
+			}
+		return success;
+	   }
+	   
+	   
+//	   gibt eine reinfolge mit der nummer ordernumber zurück
+	   public Vector<Integer> getOrder(String projectname, int ordernumber){
+		   Statement stmt;
+		   Vector<Integer> order = new Vector<Integer>();
+		   try {
+			stmt = conn.createStatement();
+		
+		   ResultSet rs = stmt.executeQuery("SELECT order_"+ordernumber+" FROM "+ projectname);	
+		   while(rs.next()){
+			   order.add(rs.getInt("order_"+ordernumber));
+		   }
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+		} 
+		   return order;
+	   }
+	   
+	   
+//	   löscht eine Reihenfolge an der stelle ordernumber
+	   public boolean deleteOrder(String projectname, int ordernumber){
+		   Statement stmt;
+		  try {
+			stmt = conn.createStatement();
+		
+		   stmt.executeUpdate("ALTER TABLE "+projectname+" DROP COLUMN order_"+ordernumber);	
+		   return true;
+		   
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			return false;
+		} 
+	   }
+	   
 	   
 	   /**
 	    * Holt sich eine Projektliste aus der Datenbank.<br>
@@ -478,12 +613,11 @@ public class UserDBaccess {
 		   }
 		   catch(SQLException e){}
 		   stmt.executeUpdate("Create table students (" +
-		   		"id int primary key, " +
-		   		"username varchar(30), " +
+		   		"username varchar(30) UNIQUE, " +
 		   		"password varchar(8) NOT NULL default 'student')");  
 		   // insert 2 rows
-		   stmt.executeUpdate("insert into students values (1,'tom','tom')");
-		   stmt.executeUpdate("insert into students values (2,'peter','peter')");
+		   stmt.executeUpdate("insert into students values ('tom','tom')");
+		   stmt.executeUpdate("insert into students values ('peter','peter')");
 		   //stmt.close();
 	   }
 	   
@@ -499,12 +633,11 @@ public class UserDBaccess {
 		   }
 		   catch(SQLException e){}
 		   stmt.executeUpdate("CREATE TABLE teachers (" +
-		   		"id int primary key, " +
-		   		"username varchar(30), " +
+		   		"username varchar(30) UNIQUE, " +
 		   		"password varchar(8)  NOT NULL default 'teacher')");
-		   stmt.executeUpdate("insert into teachers values (1,'Herr','Herr')");
-		   stmt.executeUpdate("insert into teachers values (2,'Frau','Frau')");
-		   stmt.executeUpdate("insert into teachers values (3,'TUM','TUM')");
+		   stmt.executeUpdate("insert into teachers values ('Herr','Herr')");
+		   stmt.executeUpdate("insert into teachers values ('Frau','Frau')");
+		   stmt.executeUpdate("insert into teachers values ('TUM','TUM')");
 		   //stmt.close();
 	   }
 	   

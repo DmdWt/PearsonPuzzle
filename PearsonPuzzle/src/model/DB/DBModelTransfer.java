@@ -3,7 +3,9 @@ package model.DB;
 
 
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Vector;
 
 import model.DB.UserDBaccess;
 
@@ -28,6 +30,68 @@ public class DBModelTransfer {
 				e.printStackTrace();
 			}
 	}
+	
+	
+	
+	//------------------------------------------------------------------------------------
+	//------------------------------- Teacher Student Tabellen ---------------------------
+	//------------------------------------------------------------------------------------
+		   
+	public boolean addUser(String tablename, String username, String password){
+		if(!userDBaccess.doesUserExists(username)){
+		 return userDBaccess.addUser(tablename, username, password);
+		}
+		System.out.println("person already exists");
+		return false;
+	}
+	
+	//gibt nur die namen aus der tabelle table zurück
+	public Vector<String> getNames(String table){
+		 return userDBaccess.getNames(table);
+	}
+		
+	//gibt alle namen von Lehrern und Schülern aus
+	public Vector<String> getAllNames(){
+		 Vector<String> namevector = userDBaccess.getNames("teachers");
+		 namevector.addAll(userDBaccess.getNames("students"));
+		 return namevector;
+		 
+	}
+	
+	
+	 public boolean deleteUser(String username, String table){
+		 if(userDBaccess.doesUserExists(username)){
+		 boolean success = userDBaccess.deleteUser(username, table);
+		 if(!success){
+			 System.out.println("person does exist in other table, not deleted");}
+		 return success;
+		 }
+		 else{
+			 //die Person existiert nicht
+			 System.out.println("person does not exist");
+			 return false;
+		 }
+	 }
+	 
+	 public boolean deleteUser(String username){
+		 if(userDBaccess.doesUserExists(username)){
+			 if(!userDBaccess.deleteUser(username, "students")){
+				 return userDBaccess.deleteUser(username, "teachers");
+			 }
+			 else{
+				 return true;
+			 }
+		 }
+			 
+			 else{
+				 //die Person existiert nicht
+				 System.out.println("person does not exist");
+				 return false;
+			 }
+		 
+	 }
+	
+	
 	public boolean lookUpstudent(String name, char[] password){
 		String passwordstring = new String(password);
 		return userDBaccess.lookUpstudent(name, passwordstring);
@@ -38,7 +102,9 @@ public class DBModelTransfer {
 		return userDBaccess.lookUpteacher(name, passwordstring);
 	   }
 	
-	
+	//-----------------------------------------------------------------------------
+	//------------------------------- Projekte Tabellen ---------------------------
+	//-----------------------------------------------------------------------------
 	
 	
 	private String unite(String[] codeStrings, boolean random, int tab){
@@ -201,6 +267,36 @@ public class DBModelTransfer {
 		   return userDBaccess.getCodeList(projectname);
 	   }
 	
+	public void addOrder(String projectname, Vector<Vector<Integer>> newOrdervektor){
+		for(int i = 0;i<newOrdervektor.size();i++){
+			userDBaccess.addOrder(projectname, newOrdervektor.get(i));
+		}	
+		}
+	
+	public Vector<Vector<Integer>> getOrdervektor(String projectname){
+		Vector<Vector<Integer>> ordervector = new Vector<Vector<Integer>>();
+		//solange order nicht leer ist wird ordervector befüllt
+		for(int ordernumber=0;!userDBaccess.getOrder(projectname, ordernumber).isEmpty();ordernumber++){
+		ordervector.add(userDBaccess.getOrder(projectname, ordernumber));
+		}
+		return ordervector;
+	}
+	
+	public boolean deleteOrder(String projectname, int ordernumber){
+		   return userDBaccess.deleteOrder(projectname, ordernumber);
+	   }
+	
+	public boolean deleteAllOrders(String projectname){
+		int i = 0;
+		boolean success = true;
+		   while(success){
+			   success = userDBaccess.deleteOrder(projectname, i);
+			   i++;
+		   }
+		   return !success;
+	   }
+	
+	
 	 public ArrayList <String> getProjects(int grade) {
 		 return userDBaccess.getProjects(grade);
 	 }
@@ -219,7 +315,7 @@ public class DBModelTransfer {
 		 userDBaccess.createTable_Projects();
 		 saveProject(
 					"HalloWorld", 
-					"public static void main(String args[]){ \n\t System.out.println(\"hallo world\")\n }" , 
+					"public static void main(String args[]){ \n\t System.out.println(\"hallo world\");\n }" , 
 					"",
 					"",
 					0);
