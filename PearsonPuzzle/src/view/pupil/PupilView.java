@@ -78,6 +78,7 @@ public class PupilView extends JView{
 	}
 	@Override
 	public void update(Observable arg0, Object arg1) {
+		update();
 		// TODO Auto-generated method stub
 		
 	}

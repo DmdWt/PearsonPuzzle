@@ -20,6 +20,7 @@ import view.JView;
 
 import controller.Controller;
 import controller.DCCommand;
+import controller.DefaultController;
 import model.Model;
 
 /**
@@ -32,7 +33,7 @@ public class TextEditor extends JView{
 	private JButton configure;
 	//private JEditorPane editorPane;
 	private JTextArea textArea;
-	private final static String defaultCode = "Hier müssen Sie den darzustellenden Inhalt einfügen";
+	public final static String defaultCode = "Hier müssen Sie den darzustellenden Inhalt einfügen";
 	private JTextArea description;
 	private JTextField projectName;
 	private ArrayList <JTextField> configFields;
@@ -73,7 +74,6 @@ public class TextEditor extends JView{
 		textArea.setEditable(true);
 		textArea.setLineWrap(false);
 		textArea.setTabSize(model.getTabSize());
-		textArea.setName("ProjectCode");
 		
 		JScrollPane textScrollPane = new JScrollPane(textArea);
 		textScrollPane.setVerticalScrollBarPolicy(
@@ -100,9 +100,11 @@ public class TextEditor extends JView{
 
 		ArrayList <JLabel> labels = new ArrayList <JLabel>();
 		configFields.add(new JTextField(""+textArea.getTabSize()));
+		configFields.get(configFields.size()-1).setName("TabSize");
 		labels.add(new JLabel("Tabbreite"));
 		
 		configFields.add(new JTextField(""+model.getGrade()));
+		configFields.get(configFields.size()-1).setName("Grade");
 		labels.add(new JLabel("Klassenstufe"));
 		labels.get(labels.size()-1).setToolTipText(new String("<html><p>Mögliche Werte:</p><table><tr><td>0</td><td>undefiniert</td></tr><tr><td>5</td><td>5. Jahrgangsstufe</td></tr><tr><td>6</td><td>6. Jahrgangsstufe</td><tr><td>7</td><td>7. Jahrgangsstufe</td><tr><td>8</td><td>8. Jahrgangsstufe</td><tr><td>9</td><td>9. Jahrgangsstufe</td><tr><td>10</td><td>10. Jahrgangsstufe</td><tr><td>11</td><td>11. Jahrgangsstufe</td><tr><td>12</td><td>12. Jahrgangsstufe</td></tr><tr><td>13</td><td>13. Jahrgangsstufe</td></tr><table><html>"));
 		
@@ -129,7 +131,6 @@ public class TextEditor extends JView{
 		
 		JPanel descriptionPanel=new JPanel(new BorderLayout());
 		
-		description.setName("ProjectDescription");
 		JScrollPane textScrollPane = new JScrollPane(description);
 		textScrollPane.setVerticalScrollBarPolicy(
 		                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
@@ -160,17 +161,25 @@ public class TextEditor extends JView{
 	}
 	public void addController(Controller controller){
 		save.addActionListener(controller);
-		save.setActionCommand(DCCommand.SaveProject.toString());
+		save.setActionCommand(DCCommand.Save.toString());
 
 		configure.addActionListener(controller);
 		configure.setActionCommand(DCCommand.ConfigureProject.toString());
 		
-		textArea.addFocusListener(controller);
-		description.addFocusListener(controller);
+		textArea.addFocusListener((DefaultController)controller);
+		textArea.setName("ProjectCode");
+		description.addFocusListener((DefaultController)controller);
+		
+		projectName.addFocusListener((DefaultController)controller);
+		projectName.setName("ProjectName");
+		
+		description.addFocusListener((DefaultController)controller);
+		description.setName("ProjectDescription");
 		
 		for(JTextField comp: configFields){
+			comp.setActionCommand(DCCommand.ConnectedComponent.toString());
 			comp.addActionListener(controller);
-			comp.setActionCommand(DCCommand.SetTextConfig.toString());
+			comp.addFocusListener((DefaultController)controller);
 		}
 		menu.addActionListener(controller);
 	}
@@ -207,5 +216,12 @@ public class TextEditor extends JView{
 		description.setText(model.getProjectDescription());
 		this.draw();
 		// TODO Auto-generated method stub	
+	}
+	
+	@Override
+	public Object get(String string){
+		if(string.equals("projectname"))
+			return projectName.getText();
+		return null;
 	}
 }

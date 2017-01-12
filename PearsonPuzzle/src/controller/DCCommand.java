@@ -7,12 +7,16 @@ package controller;
  *
  */
 public enum DCCommand {
-	SubmitPassword, EditProject, NewProject, OpenProject, ProjectList, SaveProject, Logout, 
-	DeleteProject, Admin, ResetDB, SetConfig, ConfigureProject, SetTextConfig, StartGroupSelection, SaveGroupSelection, CancelGroupSelection, Compile, TestCode;
+	SubmitPassword, EditProject, EditUsers, EditJUnit, AddUser, NewProject, OpenProject, ProjectList, Save, Logout, 
+	DeleteProject, Admin, ResetDB, SetConfig, ConfigureProject, ConnectedComponent, AddOrder, DeleteOrder, Compile, TestCode, SaveProjectConfiguration, ShowHelp, ;
 	
 	@Override
 	public String toString(){
 		switch(this){
+		case AddUser:
+			return "AddUser";
+		case EditUsers:
+			return "EditUsers";
 		case EditProject:
 			return "EditProject";
 		case NewProject:
@@ -21,30 +25,34 @@ public enum DCCommand {
 			return "OpenProject";
 		case ProjectList:
 			return "ProjectList";
-		case SaveProject:
-			return "SaveProject";
 		case SubmitPassword:
 			return "SubmitPassword";
 		case Logout:
 			return "Logout";
 		case DeleteProject:
 			return "DeleteProject";
+		case DeleteOrder:
+			return "DeleteOrder";
 		case Admin:
 			return "Admin";
 		case ResetDB: 
 			return "ResetDB";
 		case SetConfig:
 			return "SetConfig";
+		case ShowHelp:
+			return "ShowHelp";
 		case ConfigureProject:
 			return "ConfigureProject";
-		case SetTextConfig:
-			return "SetTextConfig";
-		case StartGroupSelection:
-			return "StartGroupSelection";
-		case SaveGroupSelection:
-			return "SaveGroupSelection";
-		case CancelGroupSelection:
-			return "CancelGroupSelection";
+		case ConnectedComponent:
+			return "ConnectedComponent";
+		case AddOrder:
+			return "AddOrder";
+		case Save:
+			return "Save";
+		case SaveProjectConfiguration:
+			return "SaveProjectConfiguration";
+		case EditJUnit:
+			return "EditJUnit";
 		case Compile:
 			return "Compile";
 		case TestCode: 

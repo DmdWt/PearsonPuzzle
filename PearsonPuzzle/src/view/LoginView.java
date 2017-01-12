@@ -54,6 +54,10 @@ public class LoginView extends JView{
 		loginPanel.add(enter);
 		
 		mainPanel.add(loginPanel);
+		
+		// Für Erstbenutzung prüfen, ob Datenbank existiert
+		if(model.getException()!=null)
+			showDialog(model.getException(), true);
 	}
 	
 	/**
@@ -80,6 +84,9 @@ public class LoginView extends JView{
 
 	@Override
 	public void update(Observable o, Object arg) {
+		if(arg!=null && arg.getClass().equals(PPException.class)){
+			this.showDialog((PPException) arg, true);
+		}
 		// TODO Auto-generated method stub
 		
 	}

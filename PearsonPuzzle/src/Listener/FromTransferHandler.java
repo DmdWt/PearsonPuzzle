@@ -92,10 +92,10 @@ public class FromTransferHandler extends TransferHandler {
 
 		JList<String> list = (JList<String>)support.getComponent();
         DefaultListModel<String> listModel = (DefaultListModel<String>)list.getModel();
+        
         // Daten von Extern werden nicht anerkannt
-        if(!model.getCodeVector().contains(data)){
+        if(!model.getCodeVector().contains(data))
         	return false;
-        }
         listModel.insertElementAt(data, dropIndex);
         Rectangle rect = list.getCellBounds(dropIndex, dropIndex);
         list.scrollRectToVisible(rect);

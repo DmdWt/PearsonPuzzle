@@ -97,6 +97,7 @@ public class TeacherView extends JView{
 	}
 	@Override
 	public void update(Observable model, Object List){
+		update();
 	}
 
 	@Override

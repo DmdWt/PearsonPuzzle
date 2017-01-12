@@ -7,7 +7,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Vector;
 
 import javax.tools.*;
@@ -46,8 +45,7 @@ public class TestCompiler {
 //				try {
 //					Class.forName( "B", true, classLoader );
 //				} catch (ClassNotFoundException e) {
-//					// TODO Auto-
-//	generated catch block
+//					// TODO Auto-generated catch block
 //					e.printStackTrace();
 //				}    // Java Compiler API
 //
@@ -71,28 +69,57 @@ public class TestCompiler {
 		 * @return Kompilieren erfolgreich
 		 */
 		public static boolean compileCode(Vector<String> solutionArray){
+			boolean ret=true;
+			String className=new String();
 			String solutionString = new String();
 				for(String line: solutionArray){
-					solutionString=solutionString+"\n"+line;
+					if(line.contains("class")){
+						if(className.isEmpty()){
+							className=line.substring(line.indexOf("class")+5, line.indexOf("{"));
+							className=className.trim();
+							solutionString=solutionString+"\n"+line;
+						}
+						else{
+							ret= ret && compileCode(solutionString, className);
+							solutionString=new String(line);
+						}
+					}
+					else{
+						solutionString=solutionString+"\n"+line;
+					}
 				}
-			return compileCode(solutionString);
+			if(className.isEmpty())
+				return compileCode(solutionString);
+			else 
+				return compileCode(solutionString, className);
 		}
 		
 		public static boolean compileCode(String src){
+			
 			 compileFailures = new Vector<HashMap<String, String>>();
 			 // Konflikte bezüglich des Klassennamens werden ausgeschlossen
 			 String className=new String(DEFAULT_CLASS_NAME);
-			 while(src.contains(className)){
-				 className=className+"_";
-			 }
 			 
 			 // Falls der Code keine Klasse enthält, wird hier eine generiert 
-			 if(!src.contains("class"))
+			 if(!src.contains("class")){
+				 while(src.contains(className)){
+					 className=className+"_";
+				 }
 				 src = "class "+className+" { "+src+" }";
+				 return compileCode(src,className);
+			 }
+			 else{
+				 Vector<String> srcVector= new Vector<String>();
+				 for(String line: src.split("\n")){
+					 srcVector.add(line);
+				 }
+				 return compileCode(srcVector);
+			 }
+		}
 			 
 			 // FIXME: Wenn der Code meherere Klassen enthält, kommt es im Moment zum Problem
 			 
-			 
+		private static boolean compileCode(String src, String className){
 			
 			 StringJavaFileObject javaFile = new StringJavaFileObject( className, src );
 			 JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
@@ -102,7 +129,6 @@ public class TestCompiler {
 			 CompilationTask task = compiler.getTask( null, fileManager, diagnostics, null, null, units );
 			 boolean success = task.call();
 		
-			 
 			 System.out.println( success ); // Compilieren erfolgreich oder nicht
 
 			 // Diagnose (bei aufgetretenem Fehler)

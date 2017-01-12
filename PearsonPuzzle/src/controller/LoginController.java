@@ -13,9 +13,16 @@ import javax.swing.event.TableModelEvent;
 import model.Model;
 import view.JView;
 
-public class LoginController extends Controller{
+public class LoginController implements Controller{
+	
+	private Model model;
+	private JView view;
+	
 	public LoginController(Model model, JView view) {
-		super(model, view);
+		this.model=model;
+		this.view=view;
+		view.addController(this);
+		view.setController(this);
 	}
 	JTextField username;
 	JPasswordField password;
@@ -68,6 +75,11 @@ public class LoginController extends Controller{
 	public void tableChanged(TableModelEvent e) {
 		// TODO Auto-generated method stub
 		
+	}
+	@Override
+	public JView getView() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
 	/*

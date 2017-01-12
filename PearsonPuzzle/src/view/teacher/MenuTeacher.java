@@ -40,7 +40,7 @@ public class MenuTeacher extends Menu{
 	@Override
 	protected void setupMenu(){
 		JMenu mainMenu = new JMenu("Projekte");
-		JMenu classMenu = new JMenu("Klassen");
+		JMenu classMenu = new JMenu("Nutzer");
 		JMenu configMenu = new JMenu("Account");
 		
 		menuItems.add(new JMenuItem("Neues Projekt"));
@@ -55,8 +55,10 @@ public class MenuTeacher extends Menu{
 		        java.awt.event.KeyEvent.VK_A, 
 		        java.awt.Event.CTRL_MASK));
 		
-		menuItems.add(new JMenuItem("Klassen verwalten"));
-		menuItems.get(menuItems.size()-1).setActionCommand("editClass");
+		menuItems.add(new JMenuItem("Nutzer hinzufügen"));
+		menuItems.get(menuItems.size()-1).setActionCommand(DCCommand.AddUser.toString());
+		menuItems.add(new JMenuItem("Nutzer löschen"));
+		menuItems.get(menuItems.size()-1).setActionCommand(DCCommand.EditUsers.toString());
 		
 		menuItems.add(new JMenuItem("Account verwalten"));
 		menuItems.get(menuItems.size()-1).setActionCommand(DCCommand.Admin.toString());
@@ -72,7 +74,7 @@ public class MenuTeacher extends Menu{
 			if(seperator<2){
 				mainMenu.add(menuItem);
 			}
-			else if(seperator<3){
+			else if(seperator<4){
 				classMenu.add(menuItem);
 			}
 			else{
@@ -89,7 +91,8 @@ public class MenuTeacher extends Menu{
 			extendedNavigation.get(extendedNavigation.size()-1).setActionCommand(DCCommand.EditProject.toString());
 			extendedNavigation.add(new JButton("Reihenfolgen"));
 			extendedNavigation.get(extendedNavigation.size()-1).setActionCommand(DCCommand.ConfigureProject.toString());
-			extendedNavigation.add(new JButton("JUnit"));	
+			extendedNavigation.add(new JButton("JUnit"));
+			extendedNavigation.get(extendedNavigation.size()-1).setActionCommand(DCCommand.EditJUnit.toString());
 			for(JButton comp: extendedNavigation){
 				comp.setOpaque(true);
 				comp.setBackground(Color.WHITE);
@@ -108,7 +111,6 @@ public class MenuTeacher extends Menu{
 			for(JButton comp: extendedNavigation){
 				comp.setBackground(Color.WHITE);
 			}
-			System.out.println(extendedNavigation.get(navigationIndex).getText());
 			extendedNavigation.get(navigationIndex).setBackground(Color.LIGHT_GRAY);
 		}
 	}

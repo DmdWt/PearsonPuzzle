@@ -1,13 +1,8 @@
 package model;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.Vector;
@@ -35,24 +30,26 @@ public class OrderFailures {
 		 	return true;
 		return false;
 	}
-	public static boolean testOrder_groups(LinkedList<Integer> sortedCode,
-			LinkedList<Boolean> groupFailures, Vector<Vector<Integer>> codeLine_GroupMatrix, LinkedHashMap<String, Integer> codeMap, Vector<String> codeVector_normal) {
-		
+	public static LinkedList<Boolean> testOrder_groups(LinkedList<Integer> sortedCode,
+			 Vector<Vector<Integer>> codeLine_GroupMatrix, LinkedHashMap<String, Integer> codeMap, Vector<String> codeVector_normal) {
+		LinkedList<Boolean> groupFailures = new LinkedList<Boolean>();
 		TreeMap<Integer, HashMap<String, Integer>>  treeMap;
 		for(Vector<Integer> groupRule : codeLine_GroupMatrix){
+			System.out.println(groupRule);
 			int line=0;
 			int ruleLayer = 0;
 			int linemax =0;
 			treeMap =  new TreeMap<Integer, HashMap<String, Integer>>();
+			HashMap<String, Integer> minIndex = new HashMap<String, Integer>();
 			treeMap.clear();
 			for(Integer rule : groupRule){
 				if(rule!= null && rule !=0){
 					String keyString = codeVector_normal.get(line);
-					Set<Integer> valueSet = new TreeSet<Integer>();
 					
 					// Regel nicht auf gleicher Ebene wie vorhergehende
 					if(ruleLayer<rule){
 						if(ruleLayer!=0){
+							System.out.println(treeMap);
 							TreeSet<Integer> treeSet = new TreeSet<Integer>(treeMap.lastEntry().getValue().values());
 							linemax = treeSet.last();
 						}
@@ -83,15 +80,18 @@ public class OrderFailures {
 					
 					// Lösungsstring wird durchsucht und 
 					for(int lineNr=startIndex; lineNr<codeVector_normal.size();lineNr++){
-					// man könnte hier auch direkt die Strings vergleichen, wäre aber evtl. langsamer
+					
 						if(codeMap.get(codeVector_normal.get(line))== codeMap.get(codeVector_normal.get(sortedCode.get(lineNr)))){
-							treeMap.get(rule).put(keyString, lineNr );
-							//System.out.println("Regelebene: "+rule+"\t String: "+keyString+"\t wurde in in Zeile "+lineNr+ " gefunden\t Linemax:"+linemax);
-							break;
+							if(minIndex.get(keyString)==null || minIndex.get(keyString)<lineNr){
+								treeMap.get(rule).put(keyString, lineNr );
+								minIndex.put(keyString, lineNr);
+								//System.out.println("Regelebene: "+rule+"\t String: "+keyString+"\t wurde in in Zeile "+lineNr+ " gefunden\t Linemax:"+linemax);
+								break;
+							}
 						}
 					}
 					if(treeMap.get(rule).get(keyString)==null 
-							|| treeMap.get(rule).get(keyString)<=linemax && linemax!=0
+							|| treeMap.get(rule).get(keyString)<=linemax && linemax!=0 
 							|| sameStringBuffer!= null && sameStringBuffer==treeMap.get(rule).get(keyString)){
 						//System.out.println("Regelebene: "+rule+"\t String: "+keyString+" konnte auf dieser Ebene zuletzt in Zeile "+sameStringBuffer+" gefunden werden."+"\n\ttreeEintrag: "+treeMap.get(rule).get(keyString)+"\t Letzte Zeile ohne Probleme:"+ linemax);
 						groupFailures.add(false);
@@ -102,11 +102,10 @@ public class OrderFailures {
 			}
 			if(groupFailures.size()<=codeLine_GroupMatrix.indexOf(groupRule)){
 				groupFailures.add(true);
+				//System.out.println("Fehler in Gruppe Nummer "+groupRule);
 			}
 		}
-		if(groupFailures.contains(false))
-			return true;
-		return false;
+		return groupFailures;
 	}
 
 }

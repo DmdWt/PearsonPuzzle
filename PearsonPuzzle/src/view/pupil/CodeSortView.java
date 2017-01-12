@@ -17,10 +17,13 @@ import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
 import javax.swing.TransferHandler;
 
+import org.junit.runner.notification.Failure;
+
 import view.JView;
 
 import controller.Controller;
 import controller.DCCommand;
+import controller.DefaultController;
 
 import Listener.FromTransferHandler;
 import Listener.ToSaveTransferHandler;
@@ -48,7 +51,7 @@ public class CodeSortView extends JView {
 	private DefaultListModel <String> saveDropModel;
 	private JButton compileButton;
 	private JButton testButton;
-	private JTextArea description;
+	private JTextArea messageBox;
 	
 	public CodeSortView(Model model) {
 		super(model);
@@ -130,13 +133,13 @@ public class CodeSortView extends JView {
 			mainPanel.add(scrollPanel_dDL, BorderLayout.LINE_END);
 		
 		// Arbeitsanweisung und Ergebnisse
-		description=new JTextArea(defaultDescription);
+		messageBox=new JTextArea(defaultDescription);
 		if(!model.getProjectDescription().trim().equals(""))
-			description.setText(model.getProjectDescription());
-		description.setLineWrap(true);
-		description.setWrapStyleWord(true);
-		description.setEditable(false);
-		JScrollPane scrollPane_description = new JScrollPane(description);
+			messageBox.setText(model.getProjectDescription());
+		messageBox.setLineWrap(true);
+		messageBox.setWrapStyleWord(true);
+		messageBox.setEditable(false);
+		JScrollPane scrollPane_description = new JScrollPane(messageBox);
 		scrollPane_description.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		scrollPane_description.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		scrollPane_description.setPreferredSize(new Dimension(360,100));
@@ -161,7 +164,7 @@ public class CodeSortView extends JView {
 	 */
 	public void addController(Controller controller){
 		// TODO: In den offiziellen Controller auslagern
-		saveDropList.addMouseListener(controller);
+		saveDropList.addMouseListener((DefaultController)controller);
 		compileButton.addActionListener(controller);
 		compileButton.setActionCommand(DCCommand.Compile.toString());
 		testButton.setActionCommand(DCCommand.TestCode.toString());
@@ -194,16 +197,31 @@ public class CodeSortView extends JView {
 			// Fehlerbericht oder Erfolg ausgeben
 			Vector<HashMap<String, String>> failures = model.getCompileFailures();
 			if(failures.isEmpty())
-				description.setText("Kompilieren war erfolgreich!");
+				messageBox.setText("Kompilieren war erfolgreich!");
 			else{
 				String failureText = "Kompilieren war nicht erfolgreich. \nAufgetretenen Fehler: ";
 				for(HashMap<String, String> failure : failures){
 					failureText = failureText+"\n "+failure.get("Nachricht")+" in Zeile "+failure.get("Zeile");
 				}
-				description.setText(failureText);
+				messageBox.setText(failureText);
 			}
 			dragList.setEnabled(false);
 			saveDropList.setEnabled(false);
+		}
+		if(arg1==DCCommand.TestCode){
+			String failureText = new String("Ergebnis des Unit-Test:\n"+model.getjUnitFailures().size()+" Fehler");
+			for(Failure failure: model.getjUnitFailures()){
+				failureText=failureText+"\n"+failure;
+			}
+			failureText = failureText + "\n";
+			for(String key : model.getSuccessMap().keySet()){
+				failureText = failureText +"\n"+key+": ";
+				if(model.getSuccessMap().get(key))
+					failureText+="Erfolgreich!";
+				else 
+					failureText+="Failed!";
+			}
+			messageBox.setText(failureText);
 		}
 		update();
 	}

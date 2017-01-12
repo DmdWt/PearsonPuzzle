@@ -1,14 +1,14 @@
 package visitor;
 
-import java.sql.SQLException;
-
 import javax.swing.UIManager;
 
 import controller.Controller;
 import controller.DefaultController;
+import controller.ExceptionController;
 import model.Model;
-import model.DB.DBModelTransfer;
+import view.JView;
 import view.LoginView;
+import view.dialog.InitializeAccess;
 
 /**
  * Klasse dient dazu, die GUI zu erzeugen.<br>
@@ -17,8 +17,7 @@ import view.LoginView;
  * @author workspace
  */
 public class user {
-	
-	
+	private static Controller controller;
 	public static void main (String args[]){
 //		try {
 //			  UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
@@ -28,7 +27,13 @@ public class user {
 	public static void setupGUI(){
 		Model model = new Model();
 		LoginView startView = new LoginView(model);
-		Controller controller = new DefaultController(model, startView);
+		controller = new DefaultController(model, startView);
 		startView.draw();
+	}
+	public static void setupExceptionGUI(){
+		Model model = new Model();
+		JView view = new InitializeAccess(model);
+		controller = new ExceptionController(model, view);
+		view.draw();
 	}
 }

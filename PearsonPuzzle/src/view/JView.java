@@ -1,14 +1,20 @@
 package view;
 
 import java.awt.BorderLayout;
+import java.awt.Container;
 import java.awt.FlowLayout;
 import java.util.Observable;
 import java.util.Observer;
 
 import javax.swing.*;
 
+import view.dialog.AddUserDialog;
+import view.dialog.DeleteOrderDialog;
+
 import model.Model;
 import controller.Controller;
+import controller.DCCommand;
+import controller.DialogController;
 
 /**
  * Design Klasse, um Erscheinungsbild der grafischen Oberfläche zu definieren
@@ -27,6 +33,7 @@ public abstract class JView implements Observer {
 	protected static Menu menu;
 	protected Model model;
 	private Controller controller;
+	private DialogController dialogController;
 	public JView(Model model){
 			// main Panel wird bereinigt
 			// da mainPanel static ist, ist dies notwendig (nur eine einzige Instanz existeiert) 
@@ -58,6 +65,11 @@ public abstract class JView implements Observer {
 			frame.setSize(800,500);
 			frame.setLocationRelativeTo(null);
 		}
+		
+		/**
+		 * Frame wird um Menü ergänzt.
+		 * @param menuBar Menü
+		 */
 		public void addMenuToFrame(JMenuBar menuBar){
 			frame.setJMenuBar(menuBar);
 		}
@@ -73,8 +85,12 @@ public abstract class JView implements Observer {
 			}
 		}
 		
+		public void setMainContent(Container contentPane){		
+			frame.setContentPane(contentPane);
+		}
+		
 		/**
-		 * Controller dieses View @return
+		 * @return Controller dieses View 
 		 */
 		public Controller getController(){
 			// TODO: !!! Return kann noch null sein
@@ -82,7 +98,7 @@ public abstract class JView implements Observer {
 		}
 		
 		/**
-		 * Der View soll geschlossen werden (in erster Linie das mainPanel
+		 * Der View soll geschlossen werden (in erster Linie das mainPanel)
 		 */
 		public void quitView(){
 			mainPanel.removeAll();
@@ -99,15 +115,15 @@ public abstract class JView implements Observer {
 		public void selectView(int i){};
 		
 		/**
-		 * Nachricht wird als Allert ausgegeben
-		 * Nachricht @param message
+		 * Nachricht wird als Allert ausgegeben.
+		 * @param message Darzustellende Nachricht
 		 */
 		public void allert(String message) {
 			JOptionPane.showMessageDialog(frame, message);
 		}
 		
 		/**
-		 * Frame soll geschlossen werden.
+		 * Frame wird geschlossen.
 		 */
 		public void exit() {
 		    frame.dispose();
@@ -116,9 +132,9 @@ public abstract class JView implements Observer {
 		/**
 		 * Es wird eine Nachricht, Meldung oder Warnung ausgegeben
 		 * @param allert
-		 * Antwort des Benutzers @return
+		 * @return Antwort des Benutzers 
 		 */
-		public Integer showMessage(Allert allert){
+		public Integer showDialog(Allert allert){
 			if(allert==Allert.projectSaved){
 				//menu.add(new JLabel("Projekt wurde gespeichert"));
 				return null;
@@ -126,9 +142,37 @@ public abstract class JView implements Observer {
 			else
 				return allert.allert(model);
 		}
+		public void showDialog(final PPException exception, boolean modal){
+			if(exception.getMessage()==PPException.databaseIsEmpty){
+				// Titel "Ersten Nutzer anlegen" wichtig für Dialog Controller
+				AddUserDialog dialog = new AddUserDialog(frame, model, "Ersten Nutzer anlegen");
+				dialogController = new DialogController(model, dialog);
+				dialog.pack();
+				dialog.show();
+			}			
+		}
+		public Integer showDialog(final DCCommand command, boolean modal){
+			if(command.equals(DCCommand.AddUser)){
+				// Titel "Nutzer hinzufügen" wichtig für Dialog Controller
+				AddUserDialog dialog = new AddUserDialog(frame, model, "Nutzer hinzufügen");
+				dialogController = new DialogController(model, dialog);
+				dialog.pack();
+				dialog.show();
+			}
+			if(command.equals(DCCommand.DeleteOrder)){
+				DeleteOrderDialog dialog = new DeleteOrderDialog(frame, model, "Gruppe löschen");
+				dialogController = new DialogController(model, dialog);
+				dialog.pack();
+				dialog.show();
+			}
+			return null;
+		}
 		public void closeAllert(){
 			
 			//optionPane.setVisible(false);
 			//frame.remove(optionPane);
+		}
+		public Object get(String variable){
+			return null;
 		}
 }

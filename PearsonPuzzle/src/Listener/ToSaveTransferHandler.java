@@ -45,7 +45,7 @@ public class ToSaveTransferHandler extends TransferHandler {
 	private int action;					// COPY oder MOVE
 	private DropMode defaultDropmode;	// Damit externer DnD prinzipiell auch Elemnte ersetzten kann (bei internem DnD immer Insert)
 	private boolean internDnD;			// Gibt Auskunft, ob es sich um ein Listeninternes DnD Event handelt (wird beim Export gesetzt und beim Import ausgelesen)	
-	private boolean dragSameElement;	// Das gleiche Element kann mehrfach importiert werden
+	private boolean dragElements_infinitly;	// Das gleiche Element kann unendlich oft importiert werden
 	private boolean removeElements;  	// Elemente wandern wieder zurück
 	private boolean deleteElements; 	// Elemente wandern nicht wieder zurück, sondern werden entfernt
 	private Model model;
@@ -57,11 +57,10 @@ public class ToSaveTransferHandler extends TransferHandler {
         	action=TransferHandler.MOVE;
         	defaultDropmode = DropMode.INSERT;
         	removeElements=true;
-        	dragSameElement=true;
+        	dragElements_infinitly=false;
         	Vector<String> codeVector = model.getCodeVector();
         	if(model.getSollution().isEmpty())
         		for(int i=0;i<codeVector.size();i++){
-        			System.out.println(i);
         			model.insertInSollution(i, codeVector.get(i));
         		}
         	break;
@@ -70,28 +69,28 @@ public class ToSaveTransferHandler extends TransferHandler {
         	defaultDropmode = DropMode.INSERT;
         	removeElements=true;
         	deleteElements=false;
-        	dragSameElement=true;
+        	dragElements_infinitly=false;
         	break;
         case 2:
         	action=TransferHandler.MOVE;
         	defaultDropmode = DropMode.INSERT;
         	removeElements=false;
         	deleteElements=false;
-        	dragSameElement=true;
+        	dragElements_infinitly=false;
         	break;
         case 3:
         	action=TransferHandler.COPY;
         	defaultDropmode = DropMode.INSERT;
         	removeElements=true;
         	deleteElements=true;
-        	dragSameElement=true;
+        	dragElements_infinitly=true;
         	break;
         default:      
         	action = TransferHandler.MOVE;
         	defaultDropmode = DropMode.INSERT;
         	removeElements=false;
         	deleteElements=false;
-        	dragSameElement=false;
+        	dragElements_infinitly=false;
         	break;
         }
 		internDnD=false;
@@ -139,7 +138,6 @@ public class ToSaveTransferHandler extends TransferHandler {
     }
 	@Override
     public boolean importData(TransferHandler.TransferSupport support) {
-        
     	if (!canImport(support))
         	return false;
         
@@ -155,10 +153,22 @@ public class ToSaveTransferHandler extends TransferHandler {
         }
         
         JList<String> list = (JList<String>)support.getComponent();
+        
         DefaultListModel<String> listModel = (DefaultListModel<String>)list.getModel();
-        if(!model.getCodeVector().contains(data))
-        	// Daten von Extern werden nicht anerkannt
-        	return false;
+        
+        // Hier wird die Anzahl der Elemente gleichen Namens (in CodeString und in der DragList) gezählt 
+        int ocNumber_main=0;
+        for(String string: model.getCodeVector()){
+        	if(string.equals(data)){
+        		ocNumber_main++;
+        	}
+        }
+        int ocNumber=0;
+        for(int i = 0; i<listModel.size();i++){
+        	if(listModel.get(i).trim().equals(data))
+        		ocNumber++;
+        }
+        
     	if(internDnD){
     		// Wenn internes DnD, werden Elemente nur verschoben, nicht ersetzt
     		listModel.insertElementAt(data, dropIndex);
@@ -171,11 +181,19 @@ public class ToSaveTransferHandler extends TransferHandler {
             list.requestFocusInWindow();
         	return true;
     	}
-    	else if(listModel.contains(data)
-        		&& !dragSameElement){
-    		// Gleiches Element wird nicht 2x aus der rechten Liste gezogen.
+    	else if(!model.getCodeVector().contains(data))
+        	// Daten von Extern werden nicht anerkannt (Wenn die rechte Liste diese Daten nicht enthält, wird abgelehnt)
+        	return false;        
+        else if(ocNumber_main<=ocNumber
+        		&& !dragElements_infinitly){
+        	// Daten von extern werden nicht anerkannt (Anzahl der bereits vorkommenden Einträge wird ermittelt)
         	return false;
         }
+//    	else if(listModel.contains(data)
+//        		&& !dragSameElement){
+//    		// Gleiches Element darf links nur 1x vorkommen.
+//        	return false;
+//        }
         else{
         	// 
         	listModel.insertElementAt(data, dropIndex);
@@ -232,7 +250,7 @@ public class ToSaveTransferHandler extends TransferHandler {
         
         // Internes DnD wird abgehandelt (verschieben)
         else if(dropIndex!=null && action!=0){
-        	System.out.println(action);
+        	
         	if(dragIndex<=dropIndex){
         		dropDList.removeElementAt(dragIndex);
         		model.removeInSollution(dragIndex);
