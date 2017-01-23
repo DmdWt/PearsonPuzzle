@@ -1,4 +1,4 @@
-package JUnitUmgebung;
+package jUnitUmgebung;
 
 
 import java.io.*;

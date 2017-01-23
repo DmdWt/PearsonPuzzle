@@ -1,0 +1,12 @@
+compiler
+controller
+controller.transferHandler
+jUnitUmgebung
+model
+model.access
+model.database
+view
+view.dialog
+view.pupil
+view.teacher
+visitor

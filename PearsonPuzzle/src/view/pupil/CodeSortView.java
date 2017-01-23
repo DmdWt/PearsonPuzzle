@@ -10,6 +10,7 @@ import java.util.Vector;
 import javax.swing.DefaultListModel;
 import javax.swing.DropMode;
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -20,13 +21,13 @@ import javax.swing.TransferHandler;
 import org.junit.runner.notification.Failure;
 
 import view.JView;
+import view.teacher.UnitEditor;
 
 import controller.Controller;
 import controller.DCCommand;
-import controller.DefaultController;
+import controller.transferHandler.FromTransferHandler;
+import controller.transferHandler.ToSaveTransferHandler;
 
-import Listener.FromTransferHandler;
-import Listener.ToSaveTransferHandler;
 
 import model.Model;
 
@@ -42,7 +43,7 @@ public class CodeSortView extends JView {
 	// Puzzlemodus 1: Elemente werden von rechts nach links "geschaufelt", mit zurückschaufeln
 	// Puzzlemodus 2: Elemente werden von rechts nach links geschaufelt, ohne zurückschaufeln
 	// Puzzlemodus 3: Elemente bleiben rechts vorhanden, mehrfach-Drag ist möglich
-	private static final int Puzzlemodus=1;
+	private final int Puzzlemode;
 	private static final String defaultDescription="Puzzle den Code in die richtige Reihenfolge!\n \nViel Spaß ;-)";
 	
 	private JList<String> dragList;
@@ -51,13 +52,19 @@ public class CodeSortView extends JView {
 	private DefaultListModel <String> saveDropModel;
 	private JButton compileButton;
 	private JButton testButton;
-	private JTextArea messageBox;
+	private JLabel messageBox;
 	
 	public CodeSortView(Model model) {
 		super(model);
 		// TODO: Arbeitsanweisungen für Schüler definieren und einfügen
 		menu=new MenuPupil();
+		
+		if(model.getPuzzlemode()==null)
+			Puzzlemode = 0;
+		else 
+			Puzzlemode = model.getPuzzlemode();
 		this.addMenuToFrame(menu);
+		
 		setupCodeLists();
 		setupButtons();
 		draw();
@@ -70,14 +77,14 @@ public class CodeSortView extends JView {
 		dragModel=makeDefaultListModel();
 		dragList=new JList<String>(dragModel);
 		FromTransferHandler dragTransferH = new FromTransferHandler(dragModel, dragList, model);
-		ToSaveTransferHandler dragDropTransferH = new ToSaveTransferHandler(saveDropModel, saveDropList, Puzzlemodus, model);
+		ToSaveTransferHandler dragDropTransferH = new ToSaveTransferHandler(saveDropModel, saveDropList, Puzzlemode, model);
 		
-		switch(Puzzlemodus){
+		switch(Puzzlemode){
 			case 0:
 				// Einzelne Drag and Drop List (nicht zwei)
 				saveDropModel=makeDefaultListModel();
 				saveDropList=new JList<String>(saveDropModel);
-				dragDropTransferH = new ToSaveTransferHandler(saveDropModel, saveDropList, Puzzlemodus, model);
+				dragDropTransferH = new ToSaveTransferHandler(saveDropModel, saveDropList, Puzzlemode, model);
 				dragModel= new DefaultListModel<String>();
 				dragList = new JList<String>();
 				saveDropList.setDropMode(DropMode.INSERT);				
@@ -129,20 +136,21 @@ public class CodeSortView extends JView {
 		scrollPanel_dDL.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		scrollPanel_dDL.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		scrollPanel_dDL.setPreferredSize(new Dimension(360,300));
-		if(Puzzlemodus!=0)
+		if(Puzzlemode!=0)
 			mainPanel.add(scrollPanel_dDL, BorderLayout.LINE_END);
 		
 		// Arbeitsanweisung und Ergebnisse
-		messageBox=new JTextArea(defaultDescription);
+		messageBox = new JLabel(defaultDescription);
+//		messageBox=new JTextArea(defaultDescription);
 		if(!model.getProjectDescription().trim().equals(""))
 			messageBox.setText(model.getProjectDescription());
-		messageBox.setLineWrap(true);
-		messageBox.setWrapStyleWord(true);
-		messageBox.setEditable(false);
+//		messageBox.setLineWrap(true);
+//		messageBox.setWrapStyleWord(true);
+//		messageBox.setEditable(false);
 		JScrollPane scrollPane_description = new JScrollPane(messageBox);
 		scrollPane_description.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		scrollPane_description.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		scrollPane_description.setPreferredSize(new Dimension(360,100));
+		scrollPane_description.setPreferredSize(new Dimension(650,100));
 		mainPanel.add(scrollPane_description,BorderLayout.PAGE_END);
 	}
 	
@@ -164,7 +172,7 @@ public class CodeSortView extends JView {
 	 */
 	public void addController(Controller controller){
 		// TODO: In den offiziellen Controller auslagern
-		saveDropList.addMouseListener((DefaultController)controller);
+		//saveDropList.addMouseListener((DefaultController)controller);
 		compileButton.addActionListener(controller);
 		compileButton.setActionCommand(DCCommand.Compile.toString());
 		testButton.setActionCommand(DCCommand.TestCode.toString());
@@ -183,7 +191,7 @@ public class CodeSortView extends JView {
 		
 		// Dies ist nötig, um bei JList Elementen die Tabbreite berücksichtigen zu können
 		// Steht hier, weil es ein Problem von Swing ist, kein allgemeines Problem
-		Vector<String> codeVector = model.getCodeVector();
+		Vector<String> codeVector = model.getCodeVector(null);
 		for(String string : codeVector){
 			
 			listModel.add(listModel.size(),  string);
@@ -199,29 +207,50 @@ public class CodeSortView extends JView {
 			if(failures.isEmpty())
 				messageBox.setText("Kompilieren war erfolgreich!");
 			else{
-				String failureText = "Kompilieren war nicht erfolgreich. \nAufgetretenen Fehler: ";
+				String failureText = "<html><body>Kompilieren war nicht erfolgreich. <br>Aufgetretenen Fehler: ";
 				for(HashMap<String, String> failure : failures){
-					failureText = failureText+"\n "+failure.get("Nachricht")+" in Zeile "+failure.get("Zeile");
+					failureText = failureText+"<br> "+failure.get("Nachricht")+" in Zeile "+failure.get("Zeile");
 				}
-				messageBox.setText(failureText);
+				messageBox.setText(failureText+"</body></html>");
 			}
 			dragList.setEnabled(false);
 			saveDropList.setEnabled(false);
 		}
 		if(arg1==DCCommand.TestCode){
-			String failureText = new String("Ergebnis des Unit-Test:\n"+model.getjUnitFailures().size()+" Fehler");
-			for(Failure failure: model.getjUnitFailures()){
-				failureText=failureText+"\n"+failure;
+			
+			String failureText = new String("<html><head><style type=\"text/css\"> .success {color:green;} .failure{color:red;} .increment {margin-left:24px;} .comment {font-style:italic;} .heading{font-style: oblique;}</style> </head><body>");
+			if(model.getJUnitCode()!=null && !model.getJUnitCode().isEmpty() && !model.getJUnitCode().equals(UnitEditor.DEFAULT_UNIT_CODE)){
+				String cssClass;
+				if(model.getjUnitFailures().size()==0)
+					 cssClass = " class=\"success\" ";
+				else
+					cssClass = " class=\"failure\" ";
+				failureText+="<span class=\"heading\">Ergebnis des Unit-Test:</u><span"+cssClass+">"+model.getjUnitFailures().size()+" Fehler</span>";
+				System.out.println(failureText);
+				for(Failure failure: model.getjUnitFailures()){
+					System.out.println(failure);
+					failureText=failureText+"<div class=\"failure\">"+failure+"</div>";
+				}
 			}
-			failureText = failureText + "\n";
+					
+			//failureText = failureText + "<br>";
 			for(String key : model.getSuccessMap().keySet()){
-				failureText = failureText +"\n"+key+": ";
+				if(key.equals("Gruppentests") || key.contains("Reihenfolge"))
+					failureText+="<div><span class=\"heading\">"+key+": </span>";
+				else
+					failureText+="<div class=\"increment\"><span class=\"heading\">"+key+": </span>";		
+				
 				if(model.getSuccessMap().get(key))
-					failureText+="Erfolgreich!";
+					failureText+="<span class=\"success\">Erfolgreich!";
 				else 
-					failureText+="Failed!";
+					failureText+="<span class=\"failure\">Failed!";
+				if(model.getOrderFailures(key)!=null
+						&& !model.getOrderFailures(key).trim().isEmpty())
+					failureText+="</span><span class=\"comment\"> ( "+model.getOrderFailures(key)+")</span>";
+				failureText += "</span></div>";
 			}
-			messageBox.setText(failureText);
+			messageBox.setText(failureText+"</body></html>");
+			System.out.println(failureText);
 		}
 		update();
 	}
@@ -233,7 +262,7 @@ public class CodeSortView extends JView {
 		dragList=new JList<String>(dragModel);
 		saveDropList=new JList<String>(saveDropModel);
 		dragList.setTransferHandler(new FromTransferHandler(dragModel, dragList, model));
-		saveDropList.setTransferHandler(new ToSaveTransferHandler(saveDropModel, saveDropList, Puzzlemodus, model));	
+		saveDropList.setTransferHandler(new ToSaveTransferHandler(saveDropModel, saveDropList, Puzzlemode, model));	
 	}
 
 }

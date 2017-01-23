@@ -7,14 +7,18 @@ import java.awt.GridLayout;
 import java.util.ArrayList;
 import java.util.Observable;
 
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.border.Border;
 
 import view.JView;
 
@@ -22,6 +26,7 @@ import controller.Controller;
 import controller.DCCommand;
 import controller.DefaultController;
 import model.Model;
+import model.access.AccessGroup;
 
 /**
  * View, der dem Lehrer das grafische Bearbeiten von Proekten ermöglicht.
@@ -37,6 +42,7 @@ public class TextEditor extends JView{
 	private JTextArea description;
 	private JTextField projectName;
 	private ArrayList <JTextField> configFields;
+	private JComboBox<String> studentAccessGroup;
 
 	public TextEditor(Model model) {
 		super(model);
@@ -45,14 +51,13 @@ public class TextEditor extends JView{
 		configure = new JButton("Projekt konfigurieren");
 		configFields = new ArrayList <JTextField>();
 		menu = new MenuTeacher(0);
-		this.addMenuToFrame(menu);
+		this.addMenuToFrame(menu);		
+		description = new JTextArea(model.getProjectDescription());
 		
 		textArea = new JTextArea(model.getProjectCode());
 		if(textArea.getText().length()==0){
 			textArea.setText(defaultCode);
 		}
-		
-		description = new JTextArea(model.getProjectDescription());
 		
 		setupTextEditor();
 		setupConfigPanel();
@@ -70,10 +75,12 @@ public class TextEditor extends JView{
 		projectName = new JTextField(model.getProjectName(),15);
 		projectName.setPreferredSize(new Dimension(200,25));
 		topPanel.add(projectName);
-		
 		textArea.setEditable(true);
 		textArea.setLineWrap(false);
 		textArea.setTabSize(model.getTabSize());
+		Border border = BorderFactory.createEmptyBorder();
+		textArea.setBorder(BorderFactory.createCompoundBorder(border, 
+	            BorderFactory.createEmptyBorder(2, 2, 2, 2)));
 		
 		JScrollPane textScrollPane = new JScrollPane(textArea);
 		textScrollPane.setVerticalScrollBarPolicy(
@@ -106,12 +113,21 @@ public class TextEditor extends JView{
 		configFields.add(new JTextField(""+model.getGrade()));
 		configFields.get(configFields.size()-1).setName("Grade");
 		labels.add(new JLabel("Klassenstufe"));
-		labels.get(labels.size()-1).setToolTipText(new String("<html><p>Mögliche Werte:</p><table><tr><td>0</td><td>undefiniert</td></tr><tr><td>5</td><td>5. Jahrgangsstufe</td></tr><tr><td>6</td><td>6. Jahrgangsstufe</td><tr><td>7</td><td>7. Jahrgangsstufe</td><tr><td>8</td><td>8. Jahrgangsstufe</td><tr><td>9</td><td>9. Jahrgangsstufe</td><tr><td>10</td><td>10. Jahrgangsstufe</td><tr><td>11</td><td>11. Jahrgangsstufe</td><tr><td>12</td><td>12. Jahrgangsstufe</td></tr><tr><td>13</td><td>13. Jahrgangsstufe</td></tr><table><html>"));
+		labels.get(labels.size()-1).setToolTipText(new String("<html><p>Mögliche Werte:</p><table><tr><td>0</td><td>undefiniert</td></tr><tr><td>5</td><td>5. Jahrgangsstufe</td></tr><tr><td>6</td><td>6. Jahrgangsstufe</td><tr><td>7</td><td>7. Jahrgangsstufe</td><tr><td>8</td><td>8. Jahrgangsstufe</td><tr><td>9</td><td>9. Jahrgangsstufe</td><tr><td>10</td><td>10. Jahrgangsstufe</td><tr><td>11</td><td>11. Jahrgangsstufe</td><tr><td>12</td><td>12. Jahrgangsstufe</td></tr><tr><td>13</td><td>13. Jahrgangsstufe</td></tr><table><html>"));	
 		
 		for(int i=0; i<labels.size() && i<configFields.size();i++){
 			configPanel.add(labels.get(i));
 			configPanel.add(configFields.get(i));
 		}
+		
+		studentAccessGroup = new JComboBox<String>();
+		studentAccessGroup.addItem("");
+		for(String student : model.getUsers(AccessGroup.STUDENT)){
+			studentAccessGroup.addItem(student);
+		}
+		configPanel.add(new JLabel("Zugriff nur für: "));
+		configPanel.add(studentAccessGroup);
+
 		//JLabel randomLabel = new JLabel("Zufallsmodus");
 		//JToggleButton randomButton= new JToggleButton();
 		//randomButton.setSize(5, 5);
@@ -129,6 +145,9 @@ public class TextEditor extends JView{
 		
 		leftPanel.add(configDiv);
 		
+		Border border = BorderFactory.createEmptyBorder();
+		description.setBorder(BorderFactory.createCompoundBorder(border, 
+	            BorderFactory.createEmptyBorder(4, 4, 4, 4)));
 		JPanel descriptionPanel=new JPanel(new BorderLayout());
 		
 		JScrollPane textScrollPane = new JScrollPane(description);
@@ -164,7 +183,7 @@ public class TextEditor extends JView{
 		save.setActionCommand(DCCommand.Save.toString());
 
 		configure.addActionListener(controller);
-		configure.setActionCommand(DCCommand.ConfigureProject.toString());
+		configure.setActionCommand(DCCommand.EditConfig.toString());
 		
 		textArea.addFocusListener((DefaultController)controller);
 		textArea.setName("ProjectCode");
@@ -181,6 +200,8 @@ public class TextEditor extends JView{
 			comp.addActionListener(controller);
 			comp.addFocusListener((DefaultController)controller);
 		}
+		studentAccessGroup.setName("AccessGroup");
+		studentAccessGroup.addFocusListener((DefaultController)controller);
 		menu.addActionListener(controller);
 	}
 	
@@ -222,6 +243,8 @@ public class TextEditor extends JView{
 	public Object get(String string){
 		if(string.equals("projectname"))
 			return projectName.getText();
+		else if(string.equals("accessgroup"))
+			return studentAccessGroup.getSelectedItem();
 		return null;
 	}
 }

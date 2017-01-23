@@ -7,59 +7,28 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Vector;
 
 import javax.tools.*;
 import javax.tools.JavaCompiler.CompilationTask;
 
-public class TestCompiler {
-	
-
-	// -------------------------- http://openbook.rheinwerk-verlag.de/java7/1507_19_002.html ---------------------
-	
-	
-//	public static boolean compile(ArrayList solution) throws IOException{
-//		
-//		String solutionString= String.join(" ", solution);
-//				
-//		
-//	
-//		File javaSrcFile = new File( "B.java" );
-//		Writer p = new FileWriter( javaSrcFile );
-//		p.write( "class B { static { "+solutionString+" } }" );
-//		p.close();
-//		
-//		
-//		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-//		StandardJavaFileManager fileManager = compiler.getStandardFileManager( null, null, null );
-//		Iterable<? extends JavaFileObject> units;
-//		units = fileManager.getJavaFileObjectsFromFiles( Arrays.asList( javaSrcFile ) );
-////		Iterable<String> options = Arrays.asList( "-verbose" );
-//		CompilationTask task = compiler.getTask( null, fileManager, null, null, null, units );
-//		task.call();
-//		fileManager.close();
-//		
-//		
-//		URLClassLoader classLoader = new URLClassLoader(
-//				  new URL[] { javaSrcFile.getAbsoluteFile().getParentFile().toURI().toURL() } );
-//				try {
-//					Class.forName( "B", true, classLoader );
-//				} catch (ClassNotFoundException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}    // Java Compiler API
-//
-//				javaSrcFile.delete();
-//		
+public class TestCompiler {		
 	
 	private final static String DEFAULT_CLASS_NAME="testCode";
-	private static Vector<HashMap<String, String>> compileFailures;
+	private Vector<HashMap<String, String>> compileFailures;
+	private String packageString;
+	private LinkedList<String> importStrings;
+	private HashMap <String, String> classes;
 	
 	public TestCompiler(){
-		// TODO: Test Compiler ObjektKonstruktor verfassen
+		packageString = new String();
+		importStrings = new LinkedList<String>();
+		classes = new HashMap<String, String>();
+		compileFailures = new Vector<HashMap<String, String>>();
 		}
 	
-	public static Vector<HashMap<String,String>> getFailures(){
+	public Vector<HashMap<String,String>> getFailures(){
 		return compileFailures;
 	}
 
@@ -68,19 +37,34 @@ public class TestCompiler {
 		 * @param solutionArray Liste von Codezeilen
 		 * @return Kompilieren erfolgreich
 		 */
-		public static boolean compileCode(Vector<String> solutionArray){
+		public boolean compileCode(Vector<String> solutionArray){
+			
 			boolean ret=true;
+//			HashMap<String, String> classes = new LinkedHashMap<String, String>();
 			String className=new String();
 			String solutionString = new String();
 				for(String line: solutionArray){
-					if(line.contains("class")){
+					if(line.trim().startsWith("package ")){
+						packageString = line.substring(line.indexOf("package")+7, line.indexOf(";"));
+						packageString = packageString.trim();
+					}
+					else if (line.trim().startsWith("import ")){
+						String importString = line.substring(line.indexOf("import")+6, line.indexOf(";"));
+						importStrings.add(importString.trim());
+					}
+					if(line.contains(" class ")){
 						if(className.isEmpty()){
 							className=line.substring(line.indexOf("class")+5, line.indexOf("{"));
 							className=className.trim();
 							solutionString=solutionString+"\n"+line;
 						}
 						else{
+//							if(classes.containsKey(className))
+//								return false;
+//							classes.put(className, solutionString);
+							
 							ret= ret && compileCode(solutionString, className);
+							className = new String();
 							solutionString=new String(line);
 						}
 					}
@@ -88,20 +72,29 @@ public class TestCompiler {
 						solutionString=solutionString+"\n"+line;
 					}
 				}
+//			for(String classN : classes.keySet()){
+//				ret = ret & compileCode(classN, classes.get(classN));
+//			}
+//			return ret;
 			if(className.isEmpty())
 				return compileCode(solutionString);
 			else 
 				return compileCode(solutionString, className);
 		}
 		
-		public static boolean compileCode(String src){
+		/**
+		 * Kompiliert einen als String übergebenen Source Code.
+		 * @param src Source Code
+		 * @return Kompilieren erfolgreich
+		 */
+		public boolean compileCode(String src){
 			
-			 compileFailures = new Vector<HashMap<String, String>>();
+
 			 // Konflikte bezüglich des Klassennamens werden ausgeschlossen
 			 String className=new String(DEFAULT_CLASS_NAME);
 			 
 			 // Falls der Code keine Klasse enthält, wird hier eine generiert 
-			 if(!src.contains("class")){
+			 if(!src.contains(" class ")){
 				 while(src.contains(className)){
 					 className=className+"_";
 				 }
@@ -117,27 +110,33 @@ public class TestCompiler {
 			 }
 		}
 			 
-			 // FIXME: Wenn der Code meherere Klassen enthält, kommt es im Moment zum Problem
-			 
-		private static boolean compileCode(String src, String className){
+		/**			 
+		 * Methode kompilert.
+		 * @param src Source Code
+		 * @param className Klassenname
+		 * @return Kompilieren erfolgreich
+		 */
+		private boolean compileCode(String src, String className){
 			
-			 StringJavaFileObject javaFile = new StringJavaFileObject( className, src );
+			// TODO: Imports hinzufügen
+			//System.out.println("package:"+packageString);
+			 StringJavaFileObject javaFile = new StringJavaFileObject( "gen_src/"+className, src );
 			 JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 			 DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
 			 StandardJavaFileManager fileManager = compiler.getStandardFileManager( diagnostics, null, null );
 			 Iterable<? extends JavaFileObject> units = Arrays.asList( javaFile );
 			 CompilationTask task = compiler.getTask( null, fileManager, diagnostics, null, null, units );
-			 boolean success = task.call();
-		
-			 System.out.println( success ); // Compilieren erfolgreich oder nicht
+			 task.call();
+			 //System.out.println(src);
 
 			 // Diagnose (bei aufgetretenem Fehler)
 			 for ( Diagnostic<?> diagnostic : diagnostics.getDiagnostics() )
 			 {
 				 HashMap <String, String> compileFailure = new HashMap<String, String>(9);
+				 compileFailure.put("Class", ""+className);
 				 compileFailure.put("Kind", ""+diagnostic.getKind());
 				 compileFailure.put("Quelle", ""+diagnostic.getSource());
-				 compileFailure.put("Code", ""+diagnostic.getCode());
+				 compileFailure.put("Code", ""+src);
 				 // TODO: Fehlerbericht anpassen (Nachricht)
 				 compileFailure.put("Nachricht",""+diagnostic.getMessage( null ) );
 				 compileFailure.put("Zeile", ""+diagnostic.getLineNumber() );
@@ -146,7 +145,8 @@ public class TestCompiler {
 				 compileFailure.put("Startpostion", ""+diagnostic.getStartPosition());
 				 compileFailure.put("Endposition", ""+diagnostic.getEndPosition() );
 				 compileFailures.add(compileFailure);
-			 }
+				 
+			 }			 
 		
 			 try {
 				 fileManager.close();
@@ -157,10 +157,13 @@ public class TestCompiler {
 			 URLClassLoader classLoader = null;
 			 try {
 				 classLoader = new URLClassLoader( new URL[] { new File(".").getAbsoluteFile().toURI().toURL() } );
+				 //System.out.println(classLoader.getURLs());
 			 } catch (MalformedURLException e) {
 				 return false;
 			 }
 			 try {
+				 //System.out.println(className);
+				 //className = "sourceCode_toTest/"+className;
 				 Class.forName( className, true, classLoader );
 				 deleteTestClass(className);
 				 
@@ -181,7 +184,3 @@ public class TestCompiler {
 			 }
 		 }
 }
-
-
-
-

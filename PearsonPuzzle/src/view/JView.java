@@ -8,8 +8,10 @@ import java.util.Observer;
 
 import javax.swing.*;
 
+import view.dialog.AddImportDialog;
 import view.dialog.AddUserDialog;
 import view.dialog.DeleteOrderDialog;
+import view.dialog.EditOrderDialog;
 
 import model.Model;
 import controller.Controller;
@@ -79,7 +81,7 @@ public abstract class JView implements Observer {
 		 */
 		public void draw(){
 		    frame.pack();
-			frame.setSize(800,500);
+			frame.setSize(800,520);
 			if(frame.isVisible()==false){
 				frame.setVisible(true);
 			}
@@ -115,18 +117,19 @@ public abstract class JView implements Observer {
 		public void selectView(int i){};
 		
 		/**
-		 * Nachricht wird als Allert ausgegeben.
-		 * @param message Darzustellende Nachricht
-		 */
-		public void allert(String message) {
-			JOptionPane.showMessageDialog(frame, message);
-		}
-		
-		/**
 		 * Frame wird geschlossen.
 		 */
 		public void exit() {
 		    frame.dispose();
+		}
+		
+		
+		/**
+		 * Nachricht wird als Allert ausgegeben.
+		 * @param message Darzustellende Nachricht
+		 */
+		public void showDialog(String message) {
+			JOptionPane.showMessageDialog(frame, message);
 		}
 		
 		/**
@@ -143,27 +146,56 @@ public abstract class JView implements Observer {
 				return allert.allert(model);
 		}
 		public void showDialog(final PPException exception, boolean modal){
+			view.dialog.JDialog dialog;
 			if(exception.getMessage()==PPException.databaseIsEmpty){
 				// Titel "Ersten Nutzer anlegen" wichtig für Dialog Controller
-				AddUserDialog dialog = new AddUserDialog(frame, model, "Ersten Nutzer anlegen");
-				dialogController = new DialogController(model, dialog);
-				dialog.pack();
-				dialog.show();
-			}			
+				dialog = new AddUserDialog(frame, model, "Ersten Nutzer anlegen");
+			}
+			else 
+				dialog=null;
+			dialogController = new DialogController(model, dialog);
+			dialog.pack();
+			dialog.setVisible(true);
+			dialog.repaint();
 		}
 		public Integer showDialog(final DCCommand command, boolean modal){
-			if(command.equals(DCCommand.AddUser)){
-				// Titel "Nutzer hinzufügen" wichtig für Dialog Controller
-				AddUserDialog dialog = new AddUserDialog(frame, model, "Nutzer hinzufügen");
+			view.dialog.JDialog dialog;
+			// Titel "Nutzer hinzufügen" wichtig für Dialog Controller
+			switch(command){
+				case AddUser:
+					dialog = new AddUserDialog(frame, model, "Nutzer hinzufügen");
+					break;
+				case AddClasses:
+					dialog = new AddImportDialog(frame, model, "Nötige Klassen");
+					break;
+				case AddMethods:
+					dialog = new AddImportDialog(frame, model, "Nötige Methoden");
+					break;
+				case DeleteOrder:
+					dialog = new DeleteOrderDialog(frame, model, "Gruppe löschen");
+					break;
+				case ShowHelp:
+					JOptionPane.showMessageDialog(frame, "An dieser Stelle werden Reihenfolgen festgelegt, in denen die SchülerInnen die Codezeilen zusammensetzen sollen.\n"+
+														"Dabei werden Codezeilen, die nach anderen Codezeilen kommen sollen, mit höheren Zahlen markiert und die Codezeilen, die vorher kommen sollen, mit niedrigeren Zahlen.\n"+
+														"Codezeilen, die untereinander austauschbar sind, werden mit gleichen Zahlen markiert.\n"+
+														"Die Zahl '0' wird beim Testen der Reihenfolgen nicht beachtet.\n"+
+														"Die Zahlen einer Reihenfolge müssen stets aufsteigend sein und sollten aufeinander folgen.\n"+
+														"Über die Schaltfläche 'Gruppe hinzufügen' können weitere Reihenfolgen festgelegt werden.\n"+
+														"Über die Schaltfläche 'Gruppe explizieren' können individuelle Fehlermeldungen für nicht Einhalten einer Reihenfolge eingegeben werden.");
+					dialog = null;
+					break;
+				case EditOrderGroup:
+					dialog = new EditOrderDialog(frame, model, "Gruppe expliziter beschreiben");
+					break;
+				default:
+					dialog = null;
+					break;
+			}			
+			if(dialog!=null){
 				dialogController = new DialogController(model, dialog);
 				dialog.pack();
-				dialog.show();
-			}
-			if(command.equals(DCCommand.DeleteOrder)){
-				DeleteOrderDialog dialog = new DeleteOrderDialog(frame, model, "Gruppe löschen");
-				dialogController = new DialogController(model, dialog);
-				dialog.pack();
-				dialog.show();
+				dialog.setVisible(true);
+				dialog.repaint();
 			}
 			return null;
 		}

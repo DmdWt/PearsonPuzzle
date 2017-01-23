@@ -2,7 +2,6 @@ package view.dialog;
 
 
 import java.awt.Frame;
-import java.awt.GridLayout;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
@@ -10,7 +9,6 @@ import java.awt.event.WindowEvent;
 import java.util.Observable;
 import java.util.Observer;
 
-import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -102,12 +100,14 @@ public class DeleteOrderDialog extends JDialog implements Observer{
 	@Override
 	public void update(Observable obs, Object arg) {
 		String message;
-		if(arg.equals(DCCommand.DeleteOrder))
-			message = "Gruppe wurde gelöscht.";
-		else
-			message = "";
-		((JLabel)messagePanel.getComponent(0)).setText(message);
-		this.pack();
+		if(arg!=null){
+			if(arg.equals(DCCommand.DeleteOrder))
+				message = "Gruppe wurde gelöscht.";
+			else
+				message = "";
+			((JLabel)messagePanel.getComponent(0)).setText(message);
+			this.pack();
+		}
 	}
 
 	@Override

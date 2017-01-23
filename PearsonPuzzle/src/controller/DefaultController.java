@@ -1,12 +1,12 @@
 package controller;
 
+import jUnitUmgebung.JUnitRunner;
+
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.ItemEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.TableModelEvent;
@@ -15,7 +15,10 @@ import javax.swing.table.TableModel;
 import javax.swing.text.JTextComponent;
 
 import javax.swing.*;
+
 import org.junit.runner.Result;
+
+import compiler.CodeCompletion;
 import compiler.TestCompiler;
 
 import model.Model;
@@ -28,18 +31,18 @@ import view.pupil.CodeSortView;
 import view.pupil.PupilView;
 import view.teacher.OptionConfiguration;
 import view.teacher.ConfigEditor;
+import view.teacher.PreViewEditor;
 import view.teacher.TeacherView;
 import view.teacher.TextEditor;
 import view.teacher.UnitEditor;
 import view.teacher.UserEditor;
 
-import JUnitUmgebung.JUnitRunner;
 /**
  * Klasse dient dazu, die standardmäßige Benutzeroberfläche aufzurufen und 
  * mit dem Controller zu verknüpfen.
  * @author workspace
  */
-public class DefaultController implements Controller, TableModelListener, MouseListener, FocusListener{
+public class DefaultController implements Controller, TableModelListener, FocusListener{
 	
 	private Model model;
 	private JView view;
@@ -65,25 +68,40 @@ public class DefaultController implements Controller, TableModelListener, MouseL
 		if( (view.getClass().equals(TextEditor.class)  
 				|| view.getClass().equals(UnitEditor.class)
 				|| view.getClass().equals(ConfigEditor.class))
-				&& cmd!=DCCommand.Save && cmd!=DCCommand.ConnectedComponent){
-			if(model.hasChanged()){
-				Integer allert=view.showDialog(Allert.notSaved);
-				if(allert==JOptionPane.YES_OPTION)
-					this.act(DCCommand.Save, null);
-				else if(allert==JOptionPane.NO_OPTION){
-					model.fetchAll();
-				}
-				else if(allert==JOptionPane.CANCEL_OPTION)
-					return;
-			}
-			else if(view.get("projectname")==""){
+				&& cmd!=DCCommand.Save 
+				&& cmd!=DCCommand.ConnectedComponent){
+			if (view.getClass().equals(TextEditor.class)
+					&& ((view.get("projectname")== null || ((String) view.get("projectname")).trim().isEmpty()))
+					&& (cmd==DCCommand.EditConfig || cmd == DCCommand.EditJUnit || cmd==DCCommand.EditPreview)){
 				view.showDialog(Allert.noContentInput);
 				return;
 			}
-			
+			else if(e.getSource().getClass().equals(JButton.class) 
+					&& cmd != DCCommand.EditConfig
+					&& cmd != DCCommand.EditJUnit
+					&& cmd != DCCommand.EditProject
+					&& cmd != DCCommand.EditPreview)
+			{}
+			else if(model.hasChanged()){
+				Integer allert=view.showDialog(Allert.notSaved);
+				if(allert==JOptionPane.YES_OPTION)
+				{
+					this.act(DCCommand.Save, null);
+					if(model.hasChanged())
+						return;
+				}
+				else if(allert==JOptionPane.NO_OPTION){
+					if(model.getProjectListID()==null)
+						return;
+					else 
+						model.fetchAll();
+				}
+				else if(allert==JOptionPane.CANCEL_OPTION)
+					return;
+			}		
 		}
 		switch(cmd){
-			case SubmitPassword:
+			case Login:
 				if(view.getClass().equals(LoginView.class))
 					((LoginView)view).submitChangeToController();
 				break;
@@ -93,6 +111,14 @@ public class DefaultController implements Controller, TableModelListener, MouseL
 					act(DCCommand.EditUsers, e);
 				}
 				view.showDialog(cmd, false);
+				break;
+			case AddClasses: 
+				if(view.getClass().equals(UnitEditor.class))
+					view.showDialog(cmd, true);
+				break;
+			case AddMethods:
+				if(view.getClass().equals(UnitEditor.class))
+					view.showDialog(cmd, true);
 				break;
 			case EditUsers:
 				view.quitView();
@@ -109,9 +135,21 @@ public class DefaultController implements Controller, TableModelListener, MouseL
 					view.addController(this);
 				}
 				break;
+			case EditPreview:
+				view.quitView();
+				view = new PreViewEditor(model);
+				view.addController(this);
+				break;
+			case EditOrderGroup:
+				if(model.getGroupMatrix().size()!=0)
+					view.showDialog(cmd, true);
+				else 
+					view.showDialog("Es sind keine Gruppen vorhanden, die man bearbeiten könnte.");
+				break;
 			case NewProject:
 				model.selectProject(null);
 				model.fetchAll();
+				model.clearProjectData();
 				view.quitView();
 				this.view=new TextEditor(model);
 				view.addController(this);
@@ -158,6 +196,12 @@ public class DefaultController implements Controller, TableModelListener, MouseL
 				this.view=startView;
 				view.update();
 				break;
+			case Randomize:
+				if(view.getClass().equals(PreViewEditor.class)){
+					model.saveProject();
+					view.update(null, DCCommand.Randomize);
+				}
+				break;
 			case ShowHelp:
 				view.showDialog(DCCommand.ShowHelp, false);
 				break;
@@ -184,6 +228,7 @@ public class DefaultController implements Controller, TableModelListener, MouseL
 				}
 				else if(view.getClass().equals(UnitEditor.class)){
 					model.setJUnitCode(((UnitEditor) view).getContent());
+					model.setImports("online", ((UnitEditor) view).getImport());
 					model.saveProjectSettings();
 				}
 				else if(view.getClass().equals(ConfigEditor.class)){
@@ -195,6 +240,9 @@ public class DefaultController implements Controller, TableModelListener, MouseL
 					//view.addController(this);
 					act(DCCommand.EditUsers, null);
 				}
+				else if(view.getClass().equals(PreViewEditor.class)){
+					model.savePuzzlemode(((PreViewEditor) view).getPuzzleModus());
+				}
 				break;
 			case DeleteProject:
 				if(view.getClass().equals(TeacherView.class) 
@@ -202,7 +250,7 @@ public class DefaultController implements Controller, TableModelListener, MouseL
 					if(model.getProjectListID()==null)
 						view.showDialog(Allert.noProjectSelected);
 					else{
-						view.allert("Sind Sie sicher, dass Sie das Projekt löschen wollen?");
+						view.showDialog("Sind Sie sicher, dass Sie das Projekt löschen wollen?");
 						// TODO: Auswahlmöglichkeit zu Allert hinzufügen
 						if(model.removeProject())
 						{
@@ -216,13 +264,13 @@ public class DefaultController implements Controller, TableModelListener, MouseL
 				if(model.getGroupMatrix().size()!=0)
 					view.showDialog(cmd, true);
 				else 
-					view.allert("Es sind keine Gruppen vorhanden, die man löschen könnte.");
+					view.showDialog("Es sind keine Gruppen vorhanden, die man löschen könnte.");
 				break;
 			case SetConfig:
 				if(model.getAccessGroup()==AccessGroup.TEACHER)
 					model.updateConfig();
 				break;
-			case ConfigureProject:
+			case EditConfig:
 				if(model.getAccessGroup()==AccessGroup.TEACHER){
 					view.quitView();
 					this.view = new ConfigEditor(model);
@@ -267,22 +315,46 @@ public class DefaultController implements Controller, TableModelListener, MouseL
 				model.addTestGroup();
 				break;
 			case Compile:
-				if(model.getAccessGroup()==AccessGroup.STUDENT)
-					TestCompiler.compileCode(model.getSolutionStrings());
-				else if(model.getAccessGroup()==AccessGroup.TEACHER)
-					TestCompiler.compileCode(((UnitEditor)view).getContent());
-				model.setCompilerFailures(TestCompiler.getFailures());
+				TestCompiler testCompiler = new TestCompiler();
+				if(model.getAccessGroup()==AccessGroup.STUDENT){
+					testCompiler.compileCode(model.getSolutionStrings());
+					model.setCompilerFailures(testCompiler.getFailures());
+				}
+				else if(model.getAccessGroup()==AccessGroup.TEACHER){
+//					JUnitRunner unitRunner = new JUnitRunner(((UnitEditor) view).getContent(), model.getProjectCode(), model.getImport("methods"));
+//					unitRunner.addOnlineImport(model.getImport("online"));
+//					unitRunner.addClasses(model.getImport("classes"));
+//					unitRunner.compileClasses_ToDisk();
+//					model.setCompilerFailures(unitRunner.getFailures());
+					
+					testCompiler.compileCode(((UnitEditor)view).getContent());
+					testCompiler.compileCode(model.getProjectCode());
+					model.setCompilerFailures(testCompiler.getFailures());
+				}
 				break;
 			case TestCode:
 				Result result;
 				if(model.getAccessGroup()==AccessGroup.STUDENT){
 					System.out.println(model.getSollution());
+					
 					//model.testSolution();
-					model.testSolution();
+					model.testOrderOfSollution();
 					//result = JUnitRunner.run();
+					if(model.getJUnitCode()!=null){ // FIXME: diese if-Abfrage gehört in den UnitRunner
+						JUnitRunner unitRunner = new JUnitRunner(model.getJUnitCode(), model.getProjectCode(), model.getImport("methods"));
+						unitRunner.addOnlineImport(model.getImport("online"));
+						unitRunner.addClasses(model.getImport("classes"));
+						result = unitRunner.run();
+						System.out.println(result.getFailures());
+						System.out.println("Anzahl der Fehler im Junit Testlauf:"+result.getFailureCount());;
+						model.setJunitFailures(result);
+					}
 				}
 				else{
-					result = JUnitRunner.run(((UnitEditor) view).getContent());
+					JUnitRunner unitRunner = new JUnitRunner(((UnitEditor) view).getContent(), model.getProjectCode(), model.getImport("methods"));
+					unitRunner.addOnlineImport(model.getImport("online"));
+					unitRunner.addClasses(model.getImport("classes"));
+					result = unitRunner.run();
 					System.out.println(result.getFailures());
 					System.out.println("Anzahl der Fehler im Junit Testlauf:"+result.getFailureCount());;
 					model.setJunitFailures(result);
@@ -301,7 +373,7 @@ public class DefaultController implements Controller, TableModelListener, MouseL
 	public void login(String username, char[] password){
 		model.setUsername(username);
 		if(username.isEmpty() || password.length==0){
-			view.allert("Bitte Nutzernamen und Passwort eingeben");
+			view.showDialog("Bitte Nutzernamen und Passwort eingeben");
 		}
 		model.login(username, password);
 		if(model.getAccessGroup()==AccessGroup.TEACHER){
@@ -315,7 +387,7 @@ public class DefaultController implements Controller, TableModelListener, MouseL
 			view.addController(this);
 		}
 		else if(model.getAccessGroup()==AccessGroup.UNAUTHORIZED){
-			view.allert("Zugang verweigert");
+			view.showDialog("Zugang verweigert");
 		}
 	}
 	
@@ -394,6 +466,11 @@ public class DefaultController implements Controller, TableModelListener, MouseL
 				((JTextArea)(e.getComponent())).setText("");
 			}
 		}
+		else if(view.getClass().equals(UnitEditor.class)){
+			if(e.getComponent().getName().equals("Imports")
+					&& model.getImport("online").equals(""))
+				((JTextComponent) e.getComponent()).setText("");
+		}
 		else if(view.getClass().equals(ConfigEditor.class)){
 			
 		}
@@ -402,56 +479,38 @@ public class DefaultController implements Controller, TableModelListener, MouseL
 	public void focusLost(FocusEvent e) {
 		if(view.getClass().equals(TextEditor.class)
 				|| view.getClass().equals(UnitEditor.class)){
-			String compName = ((Component) e.getSource()).getName();
-			String compValue = ((JTextComponent) e.getSource()).getText();
-			if(compName.equals("ProjectCode"))
-				model.setProjectCode(compValue);
-			else if(compName.equals("ProjectDescription"))
-				model.setProjectDescription(compValue);
-			else if(compName.equals("TabSize"))
-				model.setTabSize(Integer.parseInt(compValue));
-			else if(compName.equals("ProjectName"))
-				model.setProjectName(compValue);
-			else if(compName.equals("Grade"))
-				model.setGrade(Integer.parseInt(compValue));
-			else if(compName.equals("JUnitCode"))
-				model.setJUnitCode(compValue);
+			String compName = e.getComponent().getName();
+			if(e.getSource().getClass().equals(JTextArea.class) 
+					|| e.getSource().getClass().equals(JTextField.class)){
+				String compValue = ((JTextComponent) e.getSource()).getText();
+				if(compName.equals("ProjectCode"))
+					model.setProjectCode(compValue);
+				else if(compName.equals("ProjectDescription"))
+					model.setProjectDescription(compValue);
+				else if(compName.equals("TabSize"))
+					model.setTabSize(Integer.parseInt(compValue));
+				else if(compName.equals("ProjectName"))
+					model.setProjectName(compValue);
+				else if(compName.equals("Grade"))
+					model.setGrade(Integer.parseInt(compValue));
+				else if(compName.equals("JUnitCode"))
+					model.setJUnitCode(compValue);
+				else if(compName.equals("Imports"))
+					if(!model.setImports("online", compValue)){
+						view.showDialog("<html><body>Imports müssen von folgender Form sein: \n\n\timport beispiel.bspy;\nimport beipiel2.bspx </body></html>");
+					}
+			}
+			else if(e.getSource().getClass().equals(JComboBox.class))
+			{
+				if(compName.equals("AccessGroup")) {
+					JComboBox<String> jComboBox = (JComboBox<String>) e.getSource();
+					model.setStudentGroup((String) jComboBox.getSelectedItem());
+				}
+			}
 			//System.out.println("Focus Lost: "+e.getComponent().getName());
 		}
 	}
 
-	public void mouseClicked(MouseEvent e) {
-		if(e.getButton()==MouseEvent.BUTTON3){
-			if(e.getComponent().getName().equals("dropList")){
-				//ListSelectionModel lsm= ((JList<String>) (e.getComponent())).getSelectionModel();
-				//System.out.println(e.getComponent().getComponentAt(e.getLocationOnScreen()).getName());
-				//System.out.println(e.getComponent().getComponentAt(e.getPoint()));
-			}
-		}
-			
-	}
-		// TODO Auto-generated method stub
-
-
-	public void mouseEntered(MouseEvent arg0) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void mouseExited(MouseEvent arg0) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void mousePressed(MouseEvent arg0) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void mouseReleased(MouseEvent arg0) {
-		// TODO Auto-generated method stub
-		
-	}
 
 	public void tableChanged(TableModelEvent e) {
 		if(view.getClass().equals(ConfigEditor.class)){
@@ -492,6 +551,18 @@ public class DefaultController implements Controller, TableModelListener, MouseL
 	public JView getView() {
 		return view;
 	}
+	
+	
+//	public void mouseClicked(MouseEvent e) {
+//		if(e.getButton()==MouseEvent.BUTTON3){
+//			if(e.getComponent().getName().equals("dropList")){
+//				//ListSelectionModel lsm= ((JList<String>) (e.getComponent())).getSelectionModel();
+//				//System.out.println(e.getComponent().getComponentAt(e.getLocationOnScreen()).getName());
+//				//System.out.println(e.getComponent().getComponentAt(e.getPoint()));
+//			}
+//		}
+//			
+//	}
 
 //	@Override
 //	public void propertyChange(PropertyChangeEvent evt) {

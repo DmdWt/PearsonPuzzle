@@ -37,7 +37,7 @@ public class LoginView extends JView{
 		loginPanel.setLayout(new BoxLayout(loginPanel, BoxLayout.PAGE_AXIS));
 		
 		username = new JTextField("TUM");
-		username.setActionCommand(DCCommand.SubmitPassword.toString());
+		username.setActionCommand(DCCommand.Login.toString());
 		JLabel label = new JLabel("Login");
 		label.setLabelFor(username);
 		loginPanel.add(label);
@@ -46,11 +46,11 @@ public class LoginView extends JView{
 		loginPanel.add(new JLabel("Password"));
 		password = new JPasswordField("TUM");
 		password.setName("pwd");
-		password.setActionCommand(DCCommand.SubmitPassword.toString());
+		password.setActionCommand(DCCommand.Login.toString());
 		loginPanel.add(password);
 		
 		enter = new JButton("Los gehts");
-		enter.setActionCommand(DCCommand.SubmitPassword.toString());
+		enter.setActionCommand(DCCommand.Login.toString());
 		loginPanel.add(enter);
 		
 		mainPanel.add(loginPanel);

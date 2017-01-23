@@ -36,6 +36,26 @@ public class MenuTeacher extends Menu{
 		this.setNavigation(navigationSelection);
 		setupMenu();
 	}
+	private void extendMenu(){
+		// Wenn das Menü noch nicht erweitert ist, geschieht dies hier.
+		if(this.getComponentCount()<=menuItems.size()){
+			extendedNavigation = new ArrayList <JButton>();
+			extendedNavigation.add(new JButton("Code"));
+			extendedNavigation.get(extendedNavigation.size()-1).setActionCommand(DCCommand.EditProject.toString());
+			extendedNavigation.add(new JButton("Reihenfolgen"));
+			extendedNavigation.get(extendedNavigation.size()-1).setActionCommand(DCCommand.EditConfig.toString());
+			extendedNavigation.add(new JButton("JUnit"));
+			extendedNavigation.get(extendedNavigation.size()-1).setActionCommand(DCCommand.EditJUnit.toString());
+			//extendedNavigation.add(new JButton("Preview"));
+			//extendedNavigation.get(extendedNavigation.size()-1).setActionCommand(DCCommand.EditPreview.toString());
+			for(JButton comp: extendedNavigation){
+				comp.setOpaque(true);
+				comp.setBackground(Color.WHITE);
+				//comp.setMaximumSize(new Dimension(200,20));
+				this.add(comp);
+			}
+		}
+	}
 	
 	@Override
 	protected void setupMenu(){
@@ -83,24 +103,7 @@ public class MenuTeacher extends Menu{
 			seperator++;
 		}
 	}
-	private void extendMenu(){
-		// Wenn das Menü noch nicht erweitert ist, geschieht dies hier.
-		if(this.getComponentCount()<=menuItems.size()){
-			extendedNavigation = new ArrayList <JButton>();
-			extendedNavigation.add(new JButton("Code"));
-			extendedNavigation.get(extendedNavigation.size()-1).setActionCommand(DCCommand.EditProject.toString());
-			extendedNavigation.add(new JButton("Reihenfolgen"));
-			extendedNavigation.get(extendedNavigation.size()-1).setActionCommand(DCCommand.ConfigureProject.toString());
-			extendedNavigation.add(new JButton("JUnit"));
-			extendedNavigation.get(extendedNavigation.size()-1).setActionCommand(DCCommand.EditJUnit.toString());
-			for(JButton comp: extendedNavigation){
-				comp.setOpaque(true);
-				comp.setBackground(Color.WHITE);
-				//comp.setMaximumSize(new Dimension(200,20));
-				this.add(comp);
-			}
-		}
-	}
+
 	public void reduceMenu(){
 		for(int i=this.getComponentCount(); i>menuItems.size();i++){
 			this.remove(i);

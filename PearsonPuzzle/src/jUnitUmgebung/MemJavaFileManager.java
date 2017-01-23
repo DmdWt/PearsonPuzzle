@@ -1,4 +1,4 @@
-package JUnitUmgebung;
+package jUnitUmgebung;
 import javax.tools.*;
 import javax.tools.JavaFileObject.Kind;
 
@@ -10,6 +10,12 @@ public class MemJavaFileManager extends
   public MemJavaFileManager( JavaCompiler compiler, MemClassLoader classLoader )
   {
     super( compiler.getStandardFileManager( null, null, null ) );
+
+    this.classLoader = classLoader;
+  }
+  public MemJavaFileManager( DiagnosticCollector<JavaFileObject> diagnostics, JavaCompiler compiler, MemClassLoader classLoader )
+  {
+    super( compiler.getStandardFileManager( diagnostics, null, null ) );
 
     this.classLoader = classLoader;
   }

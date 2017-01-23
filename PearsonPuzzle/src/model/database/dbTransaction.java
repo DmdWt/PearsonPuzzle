@@ -3,8 +3,9 @@ package model.database;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Vector;
-
 
 import view.PPException;
 
@@ -16,25 +17,7 @@ import model.database.UserDBaccess;
  * @author workspace
  *
  */
-public class dbTransaction {
-	
-	
-public static void main(String args[]) throws SQLException{
-		UserDBaccess uuserDBaccess=new UserDBaccess();
-		uuserDBaccess.doesRandomnameExist("TestProject");
-		uuserDBaccess.doesRandomnameExist("wisseldedissel");
-		uuserDBaccess.doesRandomnameExist("HalloWorld");
-		String importstring = new String();
-		try {
-			importstring = uuserDBaccess.getOnlineImports("test");
-			importstring = importstring + " " + uuserDBaccess.getLocalImports("test");
-			
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		System.out.println(importstring);
-	}
+public class dbTransaction implements Transaction{
 	
 	private final static int length_projectName = 36;
 	private final static int length_projectDescription = 1024;
@@ -52,28 +35,28 @@ public static void main(String args[]) throws SQLException{
 		} catch (SQLException e) {
 			if(((SQLException) e).getSQLState().equals("XJ040")){ // Failed to start database '<databaseName>', see the next exception for details.
 				PPException exception = new PPException(PPException.anotherInstanceIsRunnign);
-
-				System.out.println("1");
 				throw exception;
 			}
 			else if(e.getSQLState().equals("XJ004")){ // Database '<databaseName>' not found.
 				PPException exception = new PPException(PPException.noDatabaseExists);
-
-				System.out.println("2");
 				throw exception;
 			}
 			else if(e.getSQLState().equals("42X05")){ // Table/View '<objectName>' does not exist.
 				PPException exception = new PPException(PPException.noDatabaseExists);
-
-				System.out.println("3");
 				throw exception;
 			}
 			else{
-				//System.out.println(e.getMessage());
 				e.printStackTrace();
 			}
 		}
+
 	}
+	
+	
+
+
+	
+	
 	
 	
 	
@@ -138,23 +121,11 @@ public static void main(String args[]) throws SQLException{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-//		 if(userDBaccess.doesUserExists(username)){
-//		 boolean success = userDBaccess.deleteUser(username, table);
-//		 if(!success){
-//			 System.out.println("person does exist in other table, not deleted");}
-//		 return success;
-//		 }
-//		 else{
-//			 //die Person existiert nicht
-//			 System.out.println("person does not exist");
-//			 return false;
-//		 }
 	 }
 	
 	
 	public boolean lookUpstudent(String name, char[] password){
 		String passwordstring = new String(password);
-		addUser("teacher","TUM","TUM");
 		try {
 			return userDBaccess.lookUpstudent(name, passwordstring);
 		} catch (SQLException e) {
@@ -247,7 +218,6 @@ public static void main(String args[]) throws SQLException{
 		   return new String(stringBuffer);
 	   }
 	
-	
 	private String createRandomString(int length){
 		String Randomname="";
 		boolean alreadyexists = true;
@@ -261,18 +231,18 @@ public static void main(String args[]) throws SQLException{
 		return Randomname;
 	}
 	
-	public Vector<String> getRandomNames(){
-		Vector<String> randomNames = new Vector<String>();
-		try {
-			randomNames = userDBaccess.getRandomNames();
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return randomNames;
-	}
+//	public Vector<String> getRandomNames(){
+//		Vector<String> randomNames = new Vector<String>();
+//		try {
+//			randomNames = userDBaccess.getRandomNames();
+//		} catch (SQLException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		return randomNames;
+//	}
 	
-	public String getRandomName(String projectname){
+	private String getRandomName(String projectname){
 		String randomString = "";
 		try {
 			randomString = userDBaccess.getRandomName(projectname);
@@ -285,7 +255,6 @@ public static void main(String args[]) throws SQLException{
 	
 	public void saveProject(String projectname, String codeString, String onlineimports, String localimports,
 			String description, int tab) {
-		
 		   // TODO: Linelength umdefinieren (wird nicht zwingend benötigt, übergebene Integer kann aber evtl. Verwendung finden
 		String[] codeStrings=codeString.split("\n");
 		
@@ -318,7 +287,9 @@ public static void main(String args[]) throws SQLException{
 		   codeString = unite(codeStrings, false, tab);
 		   ArrayList<Integer> randomKey = getRandomKeys(codeStrings.length);
 		   try {
-			userDBaccess.saveProject(projectname, createRandomString(15), codeStrings, onlineimports, localimports, description, randomKey, tab, linelength);
+			//userDBaccess.saveProject(projectname, codeStrings, imports, description, randomKey, tab, linelength); 13.01.2017
+			   userDBaccess.saveProject(projectname, createRandomString(15), codeStrings, description, randomKey,
+					   tab, linelength);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -334,11 +305,43 @@ public static void main(String args[]) throws SQLException{
 			}
 		userDBaccess.saveJUnitTest(projectname, jUnitCode);		
 	}
-	
+	public String getJUnitCode(String projectName) {
+		try {
+			return userDBaccess.getJUnitCode(projectName);
+		} catch (SQLException e) {
+			if(e.getSQLState().equals("42X04")){ // Table/View '<objectName>' does not exist.
+				return null;
+			}
+			e.printStackTrace();
+			return null;
+		}
+	}
+	public void saveImports(String projectname, HashMap<String, String> importMap){
+		
+		userDBaccess.saveImports(projectname, importMap.get("online"), importMap.get("classes"), importMap.get("methods"));
+	}
+	public HashMap<String, String> getImports(String projectname){
+		try {
+			return userDBaccess.getImports(projectname);
+		} catch (SQLException e) {
+			if(e.getSQLState().equals("42X04")){ // Kein Eintrag gefunden
+
+				// TODO Auto-generated catch block
+				HashMap<String, String> projectImports = new HashMap<String, String>();
+				projectImports.put("classes", "");
+				projectImports.put("methods", "");
+				projectImports.put("online", "");
+				return projectImports;
+			}
+			else 
+				e.printStackTrace();
+			return null;			
+		}
+	}
 	
 	public Vector<Integer> getRandomKeys(String projectname){
-		String randomname = getRandomName(projectname);
-		return userDBaccess.getRandomKeys(randomname);
+		projectname = getRandomName(projectname); //13.1.2017 
+		return userDBaccess.getRandomKeys(projectname);
 	}
 	
 	private ArrayList<Integer> getRandomKeys(int number){
@@ -366,7 +369,6 @@ public static void main(String args[]) throws SQLException{
 	}
 	
 	public void updateDescription(String projectname, String description){
-		
 		userDBaccess.updateDescription(projectname, description);
 		
 	}
@@ -426,16 +428,14 @@ public static void main(String args[]) throws SQLException{
 //	   }
 	
 	public ArrayList <String> getCodeList(String projectname) throws SQLException{
-		String randomname = getRandomName(projectname);
+			projectname = getRandomName(projectname); //13.1.2017 
 		   
-		   return userDBaccess.getCodeList(randomname);
+		   return userDBaccess.getCodeList(projectname);
 	   }
-	
-	
 	public String getCode(String projectname){
-		String randomname = getRandomName(projectname);
+		projectname = getRandomName(projectname); //13.1.2017 
 		try{
-			return userDBaccess.getCode(randomname);
+			return userDBaccess.getCode(projectname);
 		} catch(SQLException e){
 			if(e.getSQLState().equals("42X05")){ // Table/View '<objectName>' does not exist.
 				try {
@@ -448,21 +448,19 @@ public static void main(String args[]) throws SQLException{
 	}
 	
 	public Vector<Vector<Integer>> getOrdervektor(String projectname){
-		String randomname = getRandomName(projectname);
+		projectname = getRandomName(projectname); //13.1.2017 
 		Vector<Vector<Integer>> ordervector = new Vector<Vector<Integer>>();
 		//solange order nicht leer ist wird ordervector befüllt
-		for(int ordernumber=0;!userDBaccess.getOrder(randomname, ordernumber).isEmpty();ordernumber++){
-			ordervector.add(userDBaccess.getOrder(randomname, ordernumber));
+		for(int ordernumber=0;!userDBaccess.getOrder(projectname, ordernumber).isEmpty();ordernumber++){
+			ordervector.add(userDBaccess.getOrder(projectname, ordernumber));
 		}
 		return ordervector;
 	}
-	
-	
 	public void saveOrder(String projectname, Vector<Vector<Integer>> orderMatrix){
-		String randomname = getRandomName(projectname);
-		deleteAllOrders(randomname);
+		projectname = getRandomName(projectname); //13.1.2017 
+		deleteAllOrders(projectname);
 		for(Vector<Integer> orderVector : orderMatrix){
-			userDBaccess.addOrder(randomname, orderVector);
+			userDBaccess.addOrder(projectname, orderVector);
 		}
 	}
 //	
@@ -473,23 +471,22 @@ public static void main(String args[]) throws SQLException{
 //		}
 //	
 	@SuppressWarnings("unused")
-	private boolean deleteOrder(final String projectname, final int ordernumber){
-		String randomname = getRandomName(projectname);
-		   return userDBaccess.deleteOrder(randomname, ordernumber);
+	private boolean deleteOrder(String randomName, final int ordernumber){
+		   return userDBaccess.deleteOrder(randomName, ordernumber);
 	 }
 	
-	private boolean deleteAllOrders(String projectname){
-		String randomname = getRandomName(projectname);
+	private boolean deleteAllOrders(String randomName){
 		int i = 0;
 		boolean success = true;
 		   while(success){
-			   success = userDBaccess.deleteOrder(randomname, i);
+			   success = userDBaccess.deleteOrder(randomName, i);
 			   i++;
 		   }
 		   return !success;
 	   }
-	
-	
+	//-------------------------------------------------------------------------------------
+	//---------------------------------- Tabelle mit Projekten ----------------------------
+	//-------------------------------------------------------------------------------------
 	 public ArrayList <String> getProjects(int grade) {
 		 try {
 			return userDBaccess.getProjects(grade);
@@ -525,8 +522,7 @@ public static void main(String args[]) throws SQLException{
 	 }
 	 
 	 private void createTable_Projects() throws SQLException{
-		 saveProject("TestProject", "public static void main(String args[]){ \n\t System.out.println(\"hallo world\");\n }", "", "", "Beschreibung", 2);
-	 }
+		 userDBaccess.recreateTable_Projects();	 }
 			
 	 private void createTable_Students() throws SQLException{
 		 userDBaccess.recreateTable_Student();
@@ -543,72 +539,61 @@ public static void main(String args[]) throws SQLException{
 	 }
 	 
 	 public boolean delete(String projectname) {
-		 String randomname = getRandomName(projectname);
-		 return userDBaccess.delete(randomname);
+		 return userDBaccess.delete(projectname);
 	 }
 	 
 	 public boolean projectExists(String projectName) {
 		 return userDBaccess.projectExists(projectName);
 	 }
-
-
-
-	public String getJUnitCode(String projectName) {
+	 
+	public Integer getPuzzleMode(String projectName) {
 		try {
-			return userDBaccess.getJUnitCode(projectName);
-		} catch (SQLException e) {
-			if(e.getSQLState().equals("42X04")){ // Table/View '<objectName>' does not exist.
+			if(userDBaccess.getPuzzleMode(projectName)== null)
 				return null;
-			}
-			e.printStackTrace();
-			return null;
-		}
-	}
-	
-	public String getOnlineImports(String projectname){
-		try {
-			return userDBaccess.getOnlineImports(projectname);
+			return Integer.parseInt(userDBaccess.getPuzzleMode(projectName));
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			if(e.getSQLState().equals("42X04"))
+				return null;
+			else
+				e.printStackTrace();
 		}
-		return"";
+		return null;
+	}
+	public void savePuzzlemode(String projectname, int puzzlemode) {
+		userDBaccess.savePuzzlemode(projectname, puzzlemode);
+	}
+
+
+
+	public void saveOrderFailure(String projectname,
+			LinkedList<String> orderFailureText) {
+		String randomname = getRandomName(projectname);
+		
+		String failurname = randomname+"orderfailure";
+		for(int index=0;index<orderFailureText.size();index++){
+		userDBaccess.addOrderfailurMassage(failurname, index, orderFailureText.get(index));
+		}
+	}
+
+	public boolean updateOrderFailure(String projectname, int ordernumber, String orderFailureText){
+		String randomname = getRandomName(projectname);
+		String failurname = randomname+"orderfailure";
+		return userDBaccess.updateOrderfailurMassage(failurname, ordernumber, orderFailureText);
 	}
 	
-	public String getLocalImports(String projectname){
-		try {
-			return userDBaccess.getLocalImports(projectname);
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return"";
+	public String getOrderFailure(String projectname, int ordernumber){
+		String randomname = getRandomName(projectname);
+		String failurname = randomname+"orderfailure";
+		return userDBaccess.getOrderFailurMassage(failurname, ordernumber);
 	}
 	
-	public Vector<String> getImportsVector(String projectname){
-		Vector<String> importvector = new Vector<String>();
-		try {
-			importvector.add(userDBaccess.getOnlineImports(projectname));
-			importvector.add(userDBaccess.getLocalImports(projectname));
-			
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+	public LinkedList<String> getOrderFailure(String projectname){
+		LinkedList<String> OrderFailureText = new LinkedList<String>();
+		String randomname = getRandomName(projectname);
+		String failurname = randomname+"orderfailure";
+		for(int ordernumber= 0; userDBaccess.doesOrderExist(randomname, ordernumber);ordernumber++){
+		OrderFailureText.add(getOrderFailure(projectname, ordernumber));
 		}
-		return importvector;
+		return OrderFailureText;
 	}
-	
-	public String getImportsString(String projectname){
-		String importstring = new String();
-		try {
-			importstring = userDBaccess.getOnlineImports(projectname);
-			importstring = importstring + " " + userDBaccess.getLocalImports(projectname);
-			
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return importstring;
-	}
-	
 }

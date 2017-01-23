@@ -1,4 +1,4 @@
-package Listener;
+package controller.transferHandler;
 
 import java.awt.Rectangle;
 import java.awt.datatransfer.DataFlavor;
@@ -58,7 +58,7 @@ public class ToSaveTransferHandler extends TransferHandler {
         	defaultDropmode = DropMode.INSERT;
         	removeElements=true;
         	dragElements_infinitly=false;
-        	Vector<String> codeVector = model.getCodeVector();
+        	Vector<String> codeVector = model.getCodeVector(null);
         	if(model.getSollution().isEmpty())
         		for(int i=0;i<codeVector.size();i++){
         			model.insertInSollution(i, codeVector.get(i));
@@ -158,7 +158,7 @@ public class ToSaveTransferHandler extends TransferHandler {
         
         // Hier wird die Anzahl der Elemente gleichen Namens (in CodeString und in der DragList) gezählt 
         int ocNumber_main=0;
-        for(String string: model.getCodeVector()){
+        for(String string: model.getCodeVector(null)){
         	if(string.equals(data)){
         		ocNumber_main++;
         	}
@@ -181,7 +181,7 @@ public class ToSaveTransferHandler extends TransferHandler {
             list.requestFocusInWindow();
         	return true;
     	}
-    	else if(!model.getCodeVector().contains(data))
+    	else if(!model.getCodeVector(null).contains(data))
         	// Daten von Extern werden nicht anerkannt (Wenn die rechte Liste diese Daten nicht enthält, wird abgelehnt)
         	return false;        
         else if(ocNumber_main<=ocNumber

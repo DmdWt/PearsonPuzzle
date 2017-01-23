@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<class-diagram version="1.1.12" icons="true" always-add-relationships="false" generalizations="true" realizations="true" 
+  associations="true" dependencies="false" nesting-relationships="true" router="FAN">  
+  <package id="1" language="java" name="compiler" project="PearsonPuzzle" file="/PearsonPuzzle/src/compiler" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="199" width="259" x="16" y="49"/>    
+    <display autosize="false" stereotype="true" sort-features="false" accessors="true"/>  
+  </package>  
+  <package id="2" language="java" name="controller" project="PearsonPuzzle" file="/PearsonPuzzle/src/controller" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="411" width="714" x="344" y="52"/>    
+    <display autosize="false" stereotype="true" sort-features="false" accessors="true"/>  
+  </package>  
+  <package id="3" language="java" name="jUnitUmgebung" project="PearsonPuzzle" file="/PearsonPuzzle/src/jUnitUmgebung" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="199" width="249" x="19" y="364"/>    
+    <display autosize="false" stereotype="true" sort-features="false" accessors="true"/>  
+  </package>  
+  <package id="4" language="java" name="controller.transferHandler" project="PearsonPuzzle" 
+    file="/PearsonPuzzle/src/controller/transferHandler" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="167" width="169" x="1208" y="772"/>    
+    <display autosize="false" stereotype="true" sort-features="false" accessors="true"/>  
+  </package>  
+  <package id="5" language="java" name="model" project="PearsonPuzzle" file="/PearsonPuzzle/src/model" binary="false" 
+    corner="BOTTOM_RIGHT">    
+    <position height="445" width="760" x="351" y="576"/>    
+    <display autosize="false" stereotype="true" sort-features="false" accessors="true"/>  
+  </package>  
+  <package id="6" language="java" name="model.access" project="PearsonPuzzle" file="/PearsonPuzzle/src/model/access" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="66" width="186" x="647" y="849"/>    
+    <display autosize="false" stereotype="true" sort-features="false" accessors="true"/>  
+  </package>  
+  <package id="7" language="java" name="model.database" project="PearsonPuzzle" file="/PearsonPuzzle/src/model/database" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="363" width="252" x="378" y="650"/>    
+    <display autosize="false" stereotype="true" sort-features="false" accessors="true"/>  
+  </package>  
+  <package id="8" language="java" name="view" project="PearsonPuzzle" file="/PearsonPuzzle/src/view" binary="false" 
+    corner="BOTTOM_RIGHT">    
+    <position height="374" width="369" x="1195" y="107"/>    
+    <display autosize="false" stereotype="true" sort-features="false" accessors="true"/>  
+  </package>  
+  <package id="9" language="java" name="view.dialog" project="PearsonPuzzle" file="/PearsonPuzzle/src/view/dialog" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="1383" y="438"/>    
+    <display autosize="true" stereotype="true" sort-features="false" accessors="true"/>  
+  </package>  
+  <package id="10" language="java" name="view.pupil" project="PearsonPuzzle" file="/PearsonPuzzle/src/view/pupil" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="1482" y="270"/>    
+    <display autosize="true" stereotype="true" sort-features="false" accessors="true"/>  
+  </package>  
+  <package id="11" language="java" name="view.teacher" project="PearsonPuzzle" file="/PearsonPuzzle/src/view/teacher" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="1376" y="269"/>    
+    <display autosize="true" stereotype="true" sort-features="false" accessors="true"/>  
+  </package>  
+  <package id="12" language="java" name="visitor" project="PearsonPuzzle" file="/PearsonPuzzle/src/visitor" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="1171" y="517"/>    
+    <display autosize="true" stereotype="true" sort-features="false" accessors="true"/>  
+  </package>  
+  <interface id="13" language="java" name="controller.Controller" project="PearsonPuzzle" 
+    file="/PearsonPuzzle/src/controller/Controller.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="53" width="214" x="450" y="136"/>    
+    <display autosize="false" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </interface>  
+  <class id="14" language="java" name="controller.DefaultController" project="PearsonPuzzle" 
+    file="/PearsonPuzzle/src/controller/DefaultController.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="53" width="192" x="566" y="254"/>    
+    <display autosize="false" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="15" language="java" name="controller.DialogController" project="PearsonPuzzle" 
+    file="/PearsonPuzzle/src/controller/DialogController.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="53" width="196" x="349" y="251"/>    
+    <display autosize="false" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="16" language="java" name="model.Model" project="PearsonPuzzle" file="/PearsonPuzzle/src/model/Model.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="53" width="237" x="856" y="686"/>    
+    <display autosize="false" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="17" language="java" name="model.OrderFailures" project="PearsonPuzzle" 
+    file="/PearsonPuzzle/src/model/OrderFailures.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="53" width="212" x="869" y="866"/>    
+    <display autosize="false" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="18" language="java" name="model.ValueValidation" project="PearsonPuzzle" 
+    file="/PearsonPuzzle/src/model/ValueValidation.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="54" width="182" x="641" y="756"/>    
+    <display autosize="false" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="19" language="java" name="model.database.dbTransaction" project="PearsonPuzzle" 
+    file="/PearsonPuzzle/src/model/database/dbTransaction.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="53" width="211" x="400" y="705"/>    
+    <display autosize="false" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="20" language="java" name="model.database.UserDBaccess" project="PearsonPuzzle" 
+    file="/PearsonPuzzle/src/model/database/UserDBaccess.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="53" width="221" x="395" y="906"/>    
+    <display autosize="false" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="21" language="java" name="view.dialog.JDialog" project="PearsonPuzzle" 
+    file="/PearsonPuzzle/src/view/dialog/JDialog.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="54" width="174" x="1290" y="335"/>    
+    <display autosize="false" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="22" language="java" name="view.JView" project="PearsonPuzzle" file="/PearsonPuzzle/src/view/JView.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="53" width="194" x="1314" y="164"/>    
+    <display autosize="false" stereotype="true" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <dependency id="23">    
+    <end type="SOURCE" refId="8"/>    
+    <end type="TARGET" refId="16"/>  
+  </dependency>  
+  <dependency id="24">    
+    <end type="SOURCE" refId="16"/>    
+    <end type="TARGET" refId="18"/>  
+  </dependency>  
+  <dependency id="25">    
+    <end type="SOURCE" refId="6"/>    
+    <end type="TARGET" refId="16"/>  
+  </dependency>  
+  <dependency id="26">    
+    <end type="SOURCE" refId="11"/>    
+    <end type="TARGET" refId="16"/>  
+  </dependency>  
+  <realization id="27">    
+    <end type="SOURCE" refId="15"/>    
+    <end type="TARGET" refId="13"/>  
+  </realization>  
+  <dependency id="28">    
+    <end type="SOURCE" refId="10"/>    
+    <end type="TARGET" refId="16"/>  
+  </dependency>  
+  <dependency id="29">    
+    <end type="SOURCE" refId="21"/>    
+    <end type="TARGET" refId="16"/>  
+  </dependency>  
+  <association id="30">    
+    <end type="SOURCE" refId="16" navigable="false">      
+      <attribute id="31" name="dataBase"/>      
+      <multiplicity id="32" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="19" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <dependency id="33">    
+    <end type="SOURCE" refId="22"/>    
+    <end type="TARGET" refId="16"/>  
+  </dependency>  
+  <dependency id="34">    
+    <end type="SOURCE" refId="15"/>    
+    <end type="TARGET" refId="16"/>  
+  </dependency>  
+  <dependency id="35">    
+    <end type="SOURCE" refId="2"/>    
+    <end type="TARGET" refId="16"/>  
+  </dependency>  
+  <dependency id="36">    
+    <end type="SOURCE" refId="12"/>    
+    <end type="TARGET" refId="16"/>  
+  </dependency>  
+  <dependency id="37">    
+    <end type="SOURCE" refId="16"/>    
+    <end type="TARGET" refId="17"/>  
+  </dependency>  
+  <dependency id="38">    
+    <end type="SOURCE" refId="14"/>    
+    <end type="TARGET" refId="16"/>  
+  </dependency>  
+  <association id="39">    
+    <end type="SOURCE" refId="19" navigable="false">      
+      <attribute id="40" name="userDBaccess"/>      
+      <multiplicity id="41" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="20" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <dependency id="42">    
+    <end type="SOURCE" refId="7"/>    
+    <end type="TARGET" refId="16"/>  
+  </dependency>  
+  <realization id="43">    
+    <end type="SOURCE" refId="14"/>    
+    <end type="TARGET" refId="13"/>  
+  </realization>  
+  <dependency id="44">    
+    <end type="SOURCE" refId="19"/>    
+    <end type="TARGET" refId="16"/>  
+  </dependency>  
+  <dependency id="45">    
+    <end type="SOURCE" refId="9"/>    
+    <end type="TARGET" refId="16"/>  
+  </dependency>  
+  <dependency id="46">    
+    <end type="SOURCE" refId="4"/>    
+    <end type="TARGET" refId="16"/>  
+  </dependency>  
+  <classifier-display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+    sort-features="false" accessors="true" visibility="true">    
+    <attributes public="true" package="true" protected="true" private="true" static="true"/>    
+    <operations public="true" package="true" protected="true" private="true" static="true"/>  
+  </classifier-display>  
+  <association-display labels="true" multiplicity="true"/>
+</class-diagram>
