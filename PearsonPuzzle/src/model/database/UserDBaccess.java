@@ -487,13 +487,13 @@ public class UserDBaccess {
 //		   return codeString.toArray(new String[0]);
 //	   }
 	   	   
-	   public Vector<Integer> getRandomKeys(String projectname){
+	   public Vector<Integer> getRandomKeys(String randomname){
 		   Vector<Integer> randomKeys = new Vector<Integer>();
 		   Statement stmt;
 		try {
 			stmt = conn.createStatement();
 		
-		   ResultSet rk = stmt.executeQuery("SELECT randomKey FROM "+projectname);
+		   ResultSet rk = stmt.executeQuery("SELECT randomKey FROM "+randomname);
 		  
 		   while(rk.next()){
 			   randomKeys.add(rk.getInt("randomKey"));
@@ -506,6 +506,22 @@ public class UserDBaccess {
 			return randomKeys;
 		}
 	   }
+	   
+	   public boolean setRandomKeys(String randomname, ArrayList<Integer> randomKeys){
+		   try{
+			   Statement stmt = conn.createStatement();
+			   for(int index=0;index<randomKeys.size();index++){
+			   stmt.execute("UPDATE "+randomname+" SET randomKey="+randomKeys.get(index)+" WHERE lineKey="+index+"");
+			   }
+			   return true;
+		   }
+		   catch(SQLException e1){
+			   e1.printStackTrace();
+			   //TODO: Auto generated Method stub 
+			   }
+		   return false;
+	   }
+	   
 	   
 	   public ArrayList <String> getCodeList(String randomName) throws SQLException{
 		   //System.out.println("getcodelist");

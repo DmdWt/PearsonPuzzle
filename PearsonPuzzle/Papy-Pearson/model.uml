@@ -657,23 +657,19 @@
     </packagedElement>
     <packagedElement xmi:type="uml:StateMachine" xmi:id="_6FNcEN_pEea9BONOsN8hFQ" name="Trinken bei Orthopädix">
       <region xmi:type="uml:Region" xmi:id="_7QLaYN_pEea9BONOsN8hFQ" name="Region1">
-        <transition xmi:type="uml:Transition" xmi:id="_L4e-gN_sEea9BONOsN8hFQ" source="_aj11IN_rEea9BONOsN8hFQ" target="_B0dU0N_sEea9BONOsN8hFQ"/>
-        <transition xmi:type="uml:Transition" xmi:id="_nlnz8N_sEea9BONOsN8hFQ" source="_y1OK0N_qEea9BONOsN8hFQ" target="_aj11IN_rEea9BONOsN8hFQ"/>
-        <transition xmi:type="uml:Transition" xmi:id="_qT0qIN_tEea9BONOsN8hFQ" source="_B0dU0N_sEea9BONOsN8hFQ" target="_Rsv4oN_rEea9BONOsN8hFQ"/>
-        <transition xmi:type="uml:Transition" xmi:id="_v0D_kN_tEea9BONOsN8hFQ" source="_Rsv4oN_rEea9BONOsN8hFQ" target="_VRKQAN_qEea9BONOsN8hFQ"/>
         <transition xmi:type="uml:Transition" xmi:id="_w-_hoN_tEea9BONOsN8hFQ" source="_VRKQAN_qEea9BONOsN8hFQ" target="_y1OK0N_qEea9BONOsN8hFQ"/>
         <transition xmi:type="uml:Transition" xmi:id="_x0p-UN_tEea9BONOsN8hFQ" source="_9qPCAN_pEea9BONOsN8hFQ" target="_VRKQAN_qEea9BONOsN8hFQ"/>
-        <transition xmi:type="uml:Transition" xmi:id="_0RhpYN_tEea9BONOsN8hFQ" source="_aj11IN_rEea9BONOsN8hFQ" target="_Uds9UN_rEea9BONOsN8hFQ"/>
         <transition xmi:type="uml:Transition" xmi:id="_1lFjAN_tEea9BONOsN8hFQ" source="_Uds9UN_rEea9BONOsN8hFQ" target="_f8UDwN_tEea9BONOsN8hFQ"/>
         <transition xmi:type="uml:Transition" xmi:id="_-dixcN_tEea9BONOsN8hFQ" source="_2ooqsN_tEea9BONOsN8hFQ" target="_f8UDwN_tEea9BONOsN8hFQ"/>
-        <transition xmi:type="uml:Transition" xmi:id="_BZZekN_uEea9BONOsN8hFQ" source="_B0dU0N_sEea9BONOsN8hFQ" target="_2ooqsN_tEea9BONOsN8hFQ"/>
+        <transition xmi:type="uml:Transition" xmi:id="_tqOLkOIZEea9BONOsN8hFQ" source="_y1OK0N_qEea9BONOsN8hFQ" target="_Uds9UN_rEea9BONOsN8hFQ"/>
+        <transition xmi:type="uml:Transition" xmi:id="_-yEdUOIZEea9BONOsN8hFQ" source="_Rsv4oN_rEea9BONOsN8hFQ" target="_VRKQAN_qEea9BONOsN8hFQ"/>
+        <transition xmi:type="uml:Transition" xmi:id="_H0ECQOIaEea9BONOsN8hFQ" source="_Rsv4oN_rEea9BONOsN8hFQ" target="_2ooqsN_tEea9BONOsN8hFQ"/>
+        <transition xmi:type="uml:Transition" xmi:id="_bBlAAOIaEea9BONOsN8hFQ" source="_y1OK0N_qEea9BONOsN8hFQ" target="_Rsv4oN_rEea9BONOsN8hFQ"/>
         <subvertex xmi:type="uml:Pseudostate" xmi:id="_9qPCAN_pEea9BONOsN8hFQ" name=""/>
         <subvertex xmi:type="uml:State" xmi:id="_VRKQAN_qEea9BONOsN8hFQ" name="frisches_Cervisia"/>
         <subvertex xmi:type="uml:State" xmi:id="_y1OK0N_qEea9BONOsN8hFQ" name="leeres_Cervisia"/>
         <subvertex xmi:type="uml:State" xmi:id="_Rsv4oN_rEea9BONOsN8hFQ" name="durstig"/>
         <subvertex xmi:type="uml:State" xmi:id="_Uds9UN_rEea9BONOsN8hFQ" name="voll"/>
-        <subvertex xmi:type="uml:Pseudostate" xmi:id="_aj11IN_rEea9BONOsN8hFQ" name="" kind="choice"/>
-        <subvertex xmi:type="uml:Pseudostate" xmi:id="_B0dU0N_sEea9BONOsN8hFQ" name="" kind="choice"/>
         <subvertex xmi:type="uml:FinalState" xmi:id="_f8UDwN_tEea9BONOsN8hFQ" name=""/>
         <subvertex xmi:type="uml:State" xmi:id="_2ooqsN_tEea9BONOsN8hFQ" name="aeger_haben"/>
       </region>

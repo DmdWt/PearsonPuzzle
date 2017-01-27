@@ -340,8 +340,28 @@ public class dbTransaction implements Transaction{
 	}
 	
 	public Vector<Integer> getRandomKeys(String projectname){
-		projectname = getRandomName(projectname); //13.1.2017 
-		return userDBaccess.getRandomKeys(projectname);
+		String randomname = getRandomName(projectname); //13.1.2017 
+		return userDBaccess.getRandomKeys(randomname);
+	}
+	
+	public boolean resetRandomKeys(String projectname){
+		String randomname = getRandomName(projectname);
+		Vector<Integer> oldrandomKeys = getRandomKeys(projectname);
+		ArrayList<Integer> newrandomKeys=getRandomKeys(oldrandomKeys.size());
+		return userDBaccess.setRandomKeys(randomname, newrandomKeys);
+	}
+	
+	
+	public boolean setRandomKeys(String projectname, LinkedList<Integer> randomKeys){
+		String randomname=new String()	;
+		try {
+			randomname = userDBaccess.getRandomName(projectname);
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		ArrayList<Integer> newrandomKeys= new ArrayList<Integer>(randomKeys);
+		return userDBaccess.setRandomKeys(randomname, newrandomKeys);
 	}
 	
 	private ArrayList<Integer> getRandomKeys(int number){
