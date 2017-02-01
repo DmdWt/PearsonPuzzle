@@ -971,7 +971,7 @@ public class UserDBaccess {
 			   e.printStackTrace();
 			   
 		   }
-		try {
+		try { 
 			Statement stmt = conn.createStatement();
 			stmt.executeUpdate("INSERT INTO "+failurname+" (ordernumber, failurmassage) values ("+ordernumber+",'"+massage+"')");
 		   return true;}

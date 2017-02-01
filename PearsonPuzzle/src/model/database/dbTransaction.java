@@ -107,7 +107,7 @@ public class dbTransaction implements Transaction{
 		 return userDBaccess.getNames(table);
 	}
 		
-	//gibt alle namen von Lehrern und Schülern aus
+	//gibt alle namen von Lehrern und Schülern aus 
 	public Vector<String> getAllNames(){
 		 Vector<String> namevector = userDBaccess.getNames("teachers");
 		 namevector.addAll(userDBaccess.getNames("students"));

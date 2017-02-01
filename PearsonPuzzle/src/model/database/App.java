@@ -36,7 +36,7 @@ public class App
     		FileOutputStream fos = new FileOutputStream(outputStream);
     		ZipOutputStream zos = new ZipOutputStream(fos);
     		for(int index = 0; index<fileNames.size();index++){
-    			String inputStream= diskplace+File.separator + fileNames.get(index);
+    			String inputStream= diskplace+File.separator + fileNames.get(index); 
     			ZipEntry ze= new ZipEntry(fileNames.elementAt(index) );
     			zos.putNextEntry(ze);
     			FileInputStream in = new FileInputStream(inputStream);
