@@ -1,7 +1,9 @@
 package model.database;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -9,6 +11,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Vector;
+
+import org.apache.derby.impl.load.Import;
 
 import view.PPException;
 
@@ -276,7 +280,7 @@ public class UserDBaccess {
 				   
 			   stmt.execute("CREATE TABLE "+randomName+" ( " +
 				   		"lineKey int PRIMARY KEY, " +	
-				   		"codeLine varchar("+linelength+"), " +	
+				   		"codeLine varchar("+ Math.max(linelength,150)+"), " +	
 				   		"randomKey int)");
 
 			   
@@ -681,11 +685,43 @@ public class UserDBaccess {
 		}
 	   protected void recreateTable_Projects() throws SQLException{
 		   Statement stmt = conn.createStatement();
+		   ResultSet rs;
 		   // TODO: Allert soll erfolgen, der abfrägt, ob dies das erst Projekt ist, das man erstellt. Erst bei ja soll DROP TABLE erfolgen (sonst werden eventuell vorhandenen DAten verworfen)
-		   try{stmt.executeUpdate("DROP TABLE Projects");
-		   //stmt.close();
+		   try{//löschen aller Tabellen
+
+			   rs = stmt.executeQuery("SELECT randomName FROM Projects");
+			   String randomname = new String();
+			   
+			   while(rs.next()){
+				   randomname = rs.getString("randomName");
+				   //löschen aller Projekttabellen
+				   if(doesTableExist(randomname)){
+					   System.out.println(randomname);
+				   stmt.executeUpdate("DROP TABLE "+randomname);
+				   }
+				   //löschen aller orderFailureTabellen
+				   if(doesTableExist(randomname+"orderfailure")){
+					   stmt.executeUpdate("DROP TABLE "+randomname+"orderfailure");
+				   }
+			   }
+			   
+			   
 		   }
-		   catch(SQLException e){}
+		   catch(SQLException e){
+			   if(e.getSQLState().equals("XCL16")) // while-Schleife wurde verlassen ( Error: ResultSet not open. Operation '<operation>' not permitted. Verify that autocommit is OFF.)
+			   { }
+			   else e.printStackTrace();}
+		   
+		   try{
+			   //löschen der Tabelle Projects
+			   stmt.executeUpdate("DROP TABLE Projects");
+		   }catch(SQLException e){
+			   if(e.getSQLState().equals("42Y55")) // Tabelle Projects existiert nicht (Error: '<value>' cannot be performed on '<value>' because it does not exist.)
+			   { }
+			   else e.printStackTrace();
+		   }
+		   
+		   
 		   stmt.executeUpdate("CREATE TABLE Projects ( " +
 				   "pName varchar("+length_projectName+") UNIQUE, " +
 			   		"randomName varchar(15) UNIQUE, " +				     
@@ -996,6 +1032,100 @@ public class UserDBaccess {
 				return "databasefailur occurred";
 			}
 	}
+	
+	
+	public boolean doesTableExist(String tablename){
+		try{
+		Statement stmt = conn.createStatement();
+		stmt.executeQuery("SELECT * FROM "+tablename+"");
+		return true;
+		}catch(SQLException e){
+			   if(e.getSQLState().equals("42X05") || e.getSQLState().equals("42Y55")){// Table/View '<objectName>' does not exist.
+				   return false;
+			   }
+			   else{e.printStackTrace();
+			   return false;
+			   }
+		}
+	}
+	
+	
+	//---------------------------------------------------Export-Import------------------------------
+	
+	
+	public boolean exportTable(String tablename, String diskplace){
+		//create output directory if not exists
+    	File folder = new File(diskplace);
+    	if(!folder.exists()){
+    		folder.mkdir();
+    	}
+
+		
+		// SYSCS_EXPORT_TABLE akzeptiert nur Tabellennamen in UpperCase. 
+		String tablenameUC = tablename.toUpperCase();
+		
+		
+		Statement stmt;
+			try {
+				stmt = conn.createStatement();
+				stmt.execute("CALL SYSCS_UTIL.SYSCS_EXPORT_TABLE (null, '"+tablenameUC+"', '" + diskplace + File.separator + tablename + ".dat"+ "', '%', null, null)");
+			    return true;
+			} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+			}
+		}
+	
+	
+	
+	public boolean importTable(String tablename, String diskplace){
+	String tablenameUC = tablename.toUpperCase();
+	Statement stmt;
+	try {
+		stmt = conn.createStatement();
+//		short s =1;
+//		Import.importTable(conn, "", tablename,  diskplace + File.separator + tablename + ".dat", ";", "%", "UTF-8", s, false);
+		
+		stmt.execute("CALL SYSCS_UTIL.SYSCS_IMPORT_TABLE (null, '"+tablenameUC+"', '" +diskplace + File.separator + tablename + ".dat"+ "', '%', null, null,1)");
+
+	    return true;
+	} catch (SQLException e) {
+	// TODO Auto-generated catch block
+	e.printStackTrace();
+	return false;
+	}
+}
+	
+
+	
+	
+	//möglicherweise performatntere Implementierung
+	
+//	public boolean export(String tablename, String diskplace){
+//	// SYSCS_EXPORT_TABLE akzeptiert nur Tabellennamen in UpperCase. 
+//	String tablenameUC = tablename.toUpperCase();
+//	
+//	
+//		java.sql.PreparedStatement ps;
+//			try {
+//				ps = conn.prepareStatement("CALL SYSCS_UTIL.SYSCS_EXPORT_TABLE (?,?,?,?,?,?)");
+//			    ps.setString(1,null);
+//			    ps.setString(2,tablenameUC);
+//			    ps.setString(3,diskplace+ File.separator+tablename+".dat");
+//			    ps.setString(4,"%");
+//			    ps.setString(5,null);
+//			    ps.setString(6,null);
+//			    ps.execute();
+//			    return true;
+//			} catch (SQLException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//			return false;
+//			}
+//		}
+//	
+	
 	
 	
 }
