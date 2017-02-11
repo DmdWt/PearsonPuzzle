@@ -16,6 +16,7 @@ import model.database.dbTransaction;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 
+import view.Allert;
 import view.PPException;
 import view.teacher.UnitEditor;
 
@@ -40,8 +41,7 @@ public class Model extends Observable {
 	// Die linked Hash Map soll NICHT frei verfügbar sein 
 	// (sonst kann man eventuell die richtige Reihenfolge auslesen)
 	private LinkedHashMap<String, Integer> codeMap;
-	private LinkedList<Integer> sortedCode;
-	
+	private LinkedList<Integer> sortedCode;	
 	private Vector<String> testExpressionsVector;
 	private Vector<Vector<Integer>> codeLine_GroupMatrix;
 	private String projectName;
@@ -154,7 +154,7 @@ public class Model extends Observable {
 			setChanged(this.grade, grade);
 			this.grade = grade;
 		} else {
-			// TODO: Fehlerausgabe: Diese Jahrgangsstufe ist nicht klassifiziert
+			// Fehlerausgabe: Diese Jahrgangsstufe ist nicht klassifiziert
 		}
 		boolean hasChanged = new Boolean(hasChanged());
 		notifyObservers();
@@ -167,8 +167,8 @@ public class Model extends Observable {
 	}
 	
 	// --- Tabbreite
-	public void setTabSize(int tabSize) {
-		tabSize = ValueValidation.validateTabSize(tabSize);
+	public void setTabSize(String tabSize_String) {
+		Integer tabSize = ValueValidation.validateTabSize(tabSize_String);
 		setChanged(this.tabSize, tabSize);
 		this.tabSize = tabSize;
 		Boolean hasChanged = new Boolean(hasChanged());
@@ -192,7 +192,6 @@ public class Model extends Observable {
 	}
 
 	// --- Zugriffsgruppe
-	// TODO: in accessGroup auslagern
 	public void login(String username, char[] password){
 		this.accessGroup = getAccessGroup(username, password);
 		this.username = username;
@@ -225,6 +224,7 @@ public class Model extends Observable {
 		projectName = new String("");
 		projectCode = new String("");
 		projectDescription = new String("");
+		jUnitCode = null;
 		tabSize = 0;
 		grade = 0;
 		testExpressionsVector = new Vector<String>();
@@ -239,6 +239,8 @@ public class Model extends Observable {
 		this.projectID = projectID;
 		this.fetchProjectCode();
 		this.fetchProjectSettings();
+		if(projectID!=null)
+		setChanged();
 		notifyObservers();
 	}
 	
@@ -279,8 +281,11 @@ public class Model extends Observable {
 		if(hasChanged)
 			setChanged();
 	}
+	
+	
 	public String getProjectCode() {
-		return projectCode;
+		// XXX: Hier wurde am 7.2. trim() ergänzt Nebenwirkungen unbekannt
+		return projectCode.trim();
 	}
 	
 				// Projektvektor
@@ -301,9 +306,9 @@ public class Model extends Observable {
 			return codeVector_normal;
 		return codeVector_random;
 	}
-	public void setCodeVector(Vector<String> codeVector) {
-		this.codeVector_random = codeVector;
-	}
+//	public void setCodeVector(Vector<String> codeVector) {
+//		this.codeVector_random = codeVector;
+//	}
 	
 		
 	// ------------------ Reihenfolgen und Tests
@@ -338,6 +343,36 @@ public class Model extends Observable {
 		public void saveGroupMatrix(){
 			dataBase.saveOrder(getProjectName(), codeLine_GroupMatrix);
 			notifyObservers();
+		}
+		
+		public void saveRandomisation(){
+			if(!sortedCode.isEmpty() && sortedCode.size()==codeVector_normal.size())
+				normalizeSortedCode();
+			if(ValueValidation.isValidRandomization(sortedCode, codeVector_normal)){
+				dataBase.setRandomKeys(getProjectName(), getSollutionOrder());
+				fetchProjectCode();
+				setChanged();
+				notifyObservers(DCCommand.Save);
+			}
+			else{
+				setChanged();
+				notifyObservers(Allert.code_not_fully_sorted);
+			}
+				
+//			if(sortedCode.isEmpty() || sortedCode.size()<codeVector_normal.size()){
+//				setChanged();
+//				notifyObservers(Allert.code_not_fully_sorted);
+//			}
+//			else{
+//				setChanged();
+//				System.out.println(getSollutionOrder());
+//				normalizeSortedCode();
+//				System.out.println(getSollutionOrder());
+//				dataBase.setRandomKeys(getProjectName(), getSollutionOrder());
+//				fetchProjectCode();
+//				System.out.println(dataBase.getRandomKeys(getProjectName()));
+//				notifyObservers(DCCommand.Save);
+//			}
 		}
 		
 	// ---------------- Asserts können in der Zeile ergänzt werden (nicht vollständig implementier)
@@ -376,11 +411,15 @@ public class Model extends Observable {
 		
 		//sortedCode.add(index, codeMap.get(value.trim()));
 		sortedCode.add(index, codeMap.get(value));
+		setChanged();
+		notifyObservers();
 	}
 	public void replaceInSollution(int index, String value){
 		sortedCode.remove(index);
 		//sortedCode.add(index, codeMap.get(value.trim()));
 		sortedCode.add(index, codeMap.get(value));
+		setChanged();
+		notifyObservers();
 		
 		
 		
@@ -388,12 +427,23 @@ public class Model extends Observable {
 	}
 	public void removeInSollution(int index){
 		sortedCode.remove(index);
+		setChanged();
+		notifyObservers();
 	}
-	public void setSollution(LinkedList<Integer> sollution){
+	public void setSollutionVector(LinkedList<Integer> sollution){
 		sortedCode = sollution;
 	}
-	public LinkedList<Integer> getSollution(){
+	public LinkedList<Integer> getSollutionOrder(){
 		return sortedCode;
+	}
+	public String getSollution(){
+		StringBuffer solution = new StringBuffer();
+		for(Integer index : sortedCode){
+			if(index!=0)
+				solution.append("\n");
+			solution.append(codeVector_normal.get(index));
+		}
+		return new String(solution);
 	}
 	public Vector<String> getSolutionStrings(){
 		Vector<String> solution = new Vector<String>(codeMap.size());
@@ -404,6 +454,31 @@ public class Model extends Observable {
 	}
 	
 	/**
+	 * Der Vektor sortedCode wird normalisiert, das heißt, dass vorher doppelt vorhandene Einträge durch eindeutige Zuordnung ersetzt werden.
+	 * Beispel: <br>
+	 * Zustand vor der Methode: codeVector_normal: ("a","a","b") codeMap: {"a"-> 0, "b"->2} sortedCode (0,0,2)<br>
+	 * Zustand nach der Methode: codeVector_normal: ("a","a","b") codeMap: {"a"-> 0, "b"->2} sortedCode (0,1,2)
+	 */
+	private void normalizeSortedCode(){
+		for(int i=0; i<codeVector_normal.size(); i++){
+			if(!sortedCode.contains(i) && sortedCode.contains(codeMap.get(codeVector_normal.get(i)))){
+				try{
+				List<Integer> buffer = sortedCode.subList(sortedCode.indexOf(codeMap.get(codeVector_normal.get(i)))+1, sortedCode.size());
+				int j = buffer.indexOf(codeMap.get(codeVector_normal.get(i)));
+				
+				//int j = sortedCode.lastIndexOf(codeMap.get(codeVector_normal.get(i)));
+				if(j>=0)
+					sortedCode.set(j+sortedCode.size()-buffer.size(), i);
+					// sortedCode.set(j,i);
+				}
+				catch(Exception e){
+					//e.printStackTrace();
+				}
+			}
+		}
+	}
+	
+	/**
 	 * Gibt eine Fehlerbeschreibung in Form einer HashMap zurück.
 	 * TODO: Sind für eine "OrderGroup" spezielle Ergebnisstrings in der Datenbank hinterlegt, werden diese bei der zugehörigen Gruppe angehängt.
 	 *
@@ -411,28 +486,23 @@ public class Model extends Observable {
 	 */
 	public LinkedHashMap<String,Boolean> testOrderOfSollution(){
 		successMap = new LinkedHashMap<String,Boolean>();
-		//System.out.println(sortedCode+"vorher");
+		//System.out.println(sortedCode+"vorher"+codeMap);
 		if(sortedCode.isEmpty()){
 			successMap.put("Ausreichend viele Einträge", false);
 			setChanged();
-			notifyObservers(DCCommand.TestCode);
+			notifyObservers(DCCommand.Test);
 			return successMap;
 		}
+//		else if(sortedCode.size()<codeVector_normal.size()){
+//			successMap.put("Ausreichend viele Einträge", false);
+//			setChanged();
+//			notifyObservers(DCCommand.Test);
+//			return successMap;
+//		}
 		
-		// FIXME: unsauber, wenn nicht alle Elemnte gedragt wurden
-		else if(sortedCode.size()<codeVector_normal.size()){
-			successMap.put("Ausreichend viele Einträge", false);
-			setChanged();
-			notifyObservers(DCCommand.TestCode);
-			return successMap;
-		}
-		for(int i=0; i<codeVector_normal.size(); i++){
-			if(!sortedCode.contains(i) && sortedCode.contains(codeMap.get(codeVector_normal.get(i)))){
-				int j = sortedCode.lastIndexOf(codeMap.get(codeVector_normal.get(i)));
-				sortedCode.set(j, i);
-			}
-		}
-		// System.out.println(sortedCode+"nachher");
+		normalizeSortedCode();
+		
+		//System.out.println(sortedCode+"nachher"+codeMap);
 //		LinkedList<Integer> sortedCode = new LinkedList<Integer>();
 //		Vector<String> codeVector_normal = (Vector<String>) codeVector_normal.clone();
 //		for(
@@ -440,16 +510,20 @@ public class Model extends Observable {
 		Boolean result;
 		
 		//result = OrderFailures.testOrder_simple(this, projectCode);
-		result = OrderFailures.testOrder_simple(getSolutionStrings(), codeVector_normal, true);
-		successMap.put("Test auf 1:1 Reihenfolge", result);
+		
 		LinkedList<Boolean> groupFailures = OrderFailures.testOrder_groups(sortedCode, codeLine_GroupMatrix, codeMap, codeVector_normal);
-		successMap.put("Gruppentests", !groupFailures.contains(false));
+		if(groupFailures.size()==0){
+			result = OrderFailures.testOrder_simple(getSolutionStrings(), codeVector_normal, true);
+			successMap.put("Test auf 1:1 Reihenfolge", result);
+		}
+		else
+			successMap.put("Gruppentests", !groupFailures.contains(false));
 		for(int i=0;i<groupFailures.size();i++){
 			successMap.put("Test "+(i+1), groupFailures.get(i));
 		}
 		setChanged();
 		
-		notifyObservers(DCCommand.TestCode);
+		notifyObservers(DCCommand.Test);
 		return successMap;
 //		
 //		String sollutionString = new String();
@@ -494,12 +568,17 @@ public class Model extends Observable {
 	 * @param jUnitFailures the jUnitFailures to set
 	 */
 	public void setJunitFailures(Result result) {
+		if(result == null)
+			jUnitFailures = null;
+		else{
+		jUnitFailures = new LinkedList<Failure>();
 		for (Failure failure : result.getFailures()) {
 			if(failure!=null)
 				this.jUnitFailures.add(failure);
 		}
 		setChanged();
 		notifyObservers(DCCommand.TestCode);
+		}
 	}
 	
 	/**
@@ -518,8 +597,14 @@ public class Model extends Observable {
 	 * @param jUnitCode JUnit Sourcecode in Textform
 	 */
 	public void setJUnitCode(String jUnitCode) {
-		setChanged(this.jUnitCode, jUnitCode);
-		this.jUnitCode = jUnitCode;
+		if(jUnitCode==null || jUnitCode.equals(UnitEditor.DEFAULT_UNIT_CODE)){
+			setChanged(this.jUnitCode, "");
+			this.jUnitCode = "";
+		}
+		else{ 
+			setChanged(this.jUnitCode, jUnitCode);
+			this.jUnitCode = jUnitCode;
+		}
 	}
 
 	/**
@@ -560,8 +645,21 @@ public class Model extends Observable {
 	 * Speichert die im Model hinterlegten groben Eckdaten zum Projekt ab. 
 	 * Die "groben Eckdaten" sind: Projektname, Projektcode, Beschreibung/Arbeitsanweisung.
 	 */
-	public void saveProject(){
-		saveProject(getProjectCode(), getProjectName(), getProjectDescription(), null);
+	public void saveProject(boolean randomize){
+		if(randomize){
+			saveProject(getProjectCode(), getProjectName(), getProjectDescription(), null);
+			setChanged();
+		}
+		else if(sortedCode.isEmpty() || sortedCode.size()<codeVector_normal.size()){
+			setChanged();
+			notifyObservers(Allert.code_not_fully_sorted);
+		}
+		System.out.println(dataBase.getRandomKeys(getProjectName()));
+//		else{
+//			normalizeSortedCode();			
+//			saveProject(getProjectCode(), getProjectName(), getProjectDescription(), getSollution());
+//		}
+		notifyObservers(DCCommand.Save);
 	}
 	
 	/**
@@ -587,7 +685,7 @@ public class Model extends Observable {
 		}
 		
 		// ----- Projekt speichern
-		dataBase.saveProject(projectName, codeString,"", "", projectDescription ,tabSize);
+		dataBase.saveProject(projectName, codeString,"", "", projectDescription ,tabSize, null);
 		dataBase.updateDescription(projectName, projectDescription);
 		
 		// TODO: Test, ob erfolgreich gespeichert wurde
@@ -596,6 +694,7 @@ public class Model extends Observable {
 			if(jUnitCode!=null)
 				dataBase.saveJUnitTest(projectName,jUnitCode);
 			dataBase.saveOrder(projectName, codeLine_GroupMatrix);
+			dataBase.saveOrderFailure(projectName, orderFailureText);
 			if(projectImports!=null)
 				dataBase.saveImports(projectName, projectImports);
 			System.out.println(codeLine_GroupMatrix);
@@ -611,6 +710,7 @@ public class Model extends Observable {
 	
 	/**
 	 * Kann nur ausgeführt werden, wenn Projekt selektiert wurde.
+	 * Speichert TabSize, Grade, JUnitCode, und alle Imports (Klassen, Methoden, Online). 
 	 */
 	public void saveProjectSettings(){
 		if(projectID!=null){
@@ -713,10 +813,8 @@ public class Model extends Observable {
 				sortedCode = new LinkedList<Integer>();
 				codeLine_GroupMatrix = new Vector<Vector<Integer>>();
 				codeLine_GroupMatrix = dataBase.getOrdervektor(getProjectName());
-				orderFailureText = new LinkedList<String>();
-				for(Vector<Integer> clGroup: codeLine_GroupMatrix){
-					orderFailureText.add(new String());
-				}
+				orderFailureText = dataBase.getOrderFailure(getProjectName());
+				
 				for(int index=0; index<strings.length; index++){
 					
 					
@@ -751,7 +849,7 @@ public class Model extends Observable {
 					if(!codeMap.containsKey(bString))
 						codeMap.put(bString, index);
 				}
-				System.out.println("codeMap"+codeMap);
+				System.out.println("codeMap"+codeMap+"\trandom"+codeVector_random+" "+randomInts);
 			}				
 	}
 	// --- Datenbank zurücksetzen
@@ -786,7 +884,8 @@ public class Model extends Observable {
 			
 			if(accessGroup==null)
 				notifyObservers("accessgroup_unset");
-			
+			else if(accessGroup==AccessGroup.UNAUTHORIZED)
+				notifyObservers("username_noTable");
 			else if(userName == null 
 					|| userName.equals(""))
 				notifyObservers("username_unset");
@@ -948,22 +1047,42 @@ public class Model extends Observable {
 		this.orderFailureText.set(index, failureText);
 	}
 
-	public String getOrderFailures(int index) {
-		if(orderFailureText!=null)
+	public String getOrderFailureText(int index) {
+		if(orderFailureText!=null && index<orderFailureText.size())
 			return orderFailureText.get(index);
 		return null;
 	}
-	public String getOrderFailures(String gruppe) {
+	public String getOrderFailureText(String gruppe) {
 		gruppe = gruppe.replace("Test", "").trim();
 		try{
 			Integer index = Integer.parseInt(gruppe);
-			return getOrderFailures(index-1);
+			return getOrderFailureText(index-1);
 		} catch(Exception e){ return null;}
 	}
 
 	public void saveOrderFailures() {
 		dataBase.saveOrderFailure(projectList.get(projectID), orderFailureText);
-		// FIXME: Datenbankanbindung
+	}
+	
+	public void exportDatabase(String diskplace){
+		dataBase.exportAll(diskplace);
+	}
+	
+	public void replaceDatabase(String importfile, String diskplace){
+		dataBase.replaceDb(importfile, diskplace);
+		fetchAll();
+		notifyObservers();
+	}
+	
+	public void setDatabase(dbTransaction dataBaseConnection){
+		if(dataBaseConnection==null && this.dataBase!=null){
+			// TODO: Datenbankverbindung schließen implementieren;
+		}
+		this.dataBase = dataBaseConnection;
+	}
+	
+	public void setAccessGroup(AccessGroup accessGroup){
+		this.accessGroup = accessGroup;
 	}
 
 }

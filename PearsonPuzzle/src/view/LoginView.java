@@ -1,7 +1,11 @@
 package view;
 
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.util.Observable;
+
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JMenuBar;
@@ -22,6 +26,8 @@ import model.Model;
 public class LoginView extends JView{
 	private JPanel loginPanel;
 	private JButton enter;
+	private JButton startApplet;
+	private JButton importDatabase;
 	private JTextField username;
 	private JPasswordField password;
 	public LoginView(Model model){
@@ -29,32 +35,51 @@ public class LoginView extends JView{
 		setupFrame();
 		setupLoginPanel();
 		this.addMenuToFrame(new JMenuBar());
-		draw();
+		mainPanel.revalidate();
 	}
 	
 	private void setupLoginPanel(){
+		
+		JPanel contentPanel = new JPanel();
+		contentPanel.setLayout(new GridLayout(2,2, 5,50));
 		loginPanel = new JPanel();
-		loginPanel.setLayout(new BoxLayout(loginPanel, BoxLayout.PAGE_AXIS));
+		loginPanel.setLayout(new BoxLayout(loginPanel, BoxLayout.PAGE_AXIS));		
+		
+		importDatabase = new JButton("Daten Laden");
+		importDatabase.setIcon(new ImageIcon("rsc/icon/package2.png"));
+		importDatabase.setActionCommand(DCCommand.DB_Import.toString());
+		contentPanel.add(importDatabase);
+		
+		startApplet = new JButton("Los gehts");
+		startApplet.setIcon(new ImageIcon("rsc/icon/flag_green.png"));
+		startApplet.setActionCommand(DCCommand.Applet.toString());
+		startApplet.setName("Applet");
+		contentPanel.add(startApplet);
 		
 		username = new JTextField("TUM");
 		username.setActionCommand(DCCommand.Login.toString());
-		JLabel label = new JLabel("Login");
+		JLabel label = new JLabel("Nutzername");
 		label.setLabelFor(username);
 		loginPanel.add(label);
 		loginPanel.add(username);
 		
-		loginPanel.add(new JLabel("Password"));
+		loginPanel.add(new JLabel("Passwort"));
 		password = new JPasswordField("TUM");
 		password.setName("pwd");
 		password.setActionCommand(DCCommand.Login.toString());
 		loginPanel.add(password);
+		JPanel loginbox = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+		loginbox.add(loginPanel);
 		
-		enter = new JButton("Los gehts");
+		enter = new JButton();
+		enter.setLayout(new FlowLayout(FlowLayout.RIGHT));
 		enter.setActionCommand(DCCommand.Login.toString());
-		loginPanel.add(enter);
+		enter.add(new JLabel(new ImageIcon("rsc/icon/lock_blue.png")));
+		enter.add(loginPanel);
+		contentPanel.add(enter);
 		
-		mainPanel.add(loginPanel);
 		
+		mainPanel.add(contentPanel);
 		// Für Erstbenutzung prüfen, ob Datenbank existiert
 		if(model.getException()!=null)
 			showDialog(model.getException(), true);
@@ -64,6 +89,8 @@ public class LoginView extends JView{
 	 * Controller mit Action Listener Implementierung @param controller
 	 */
 	public void addController(Controller controller) {
+		importDatabase.addActionListener(controller);
+		startApplet.addActionListener(controller);
 		enter.addActionListener(controller);
 		username.addActionListener(controller);
 		password.addActionListener(controller);

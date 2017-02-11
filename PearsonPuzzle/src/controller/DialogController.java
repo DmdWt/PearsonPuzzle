@@ -6,19 +6,18 @@ import java.awt.event.FocusListener;
 import java.awt.event.ItemEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.util.LinkedList;
 
-import javax.swing.JComboBox;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
 import javax.swing.event.ListSelectionEvent;
-import javax.swing.text.JTextComponent;
+
+import compiler.TestCompiler;
 
 import model.Model;
 
-import view.JView;
 import view.dialog.AddImportDialog;
 import view.dialog.AddUserDialog;
+import view.dialog.CompileDialog;
 import view.dialog.DeleteOrderDialog;
 import view.dialog.EditOrderDialog;
 import view.dialog.JDialog;
@@ -30,35 +29,54 @@ public class DialogController implements Controller, PropertyChangeListener, Foc
 
 	public DialogController(Model model, JDialog dialog){
 		this.dialog = dialog;
-		this.dialog.addController(this);
 		this.model = model;
+		model.addObserver(dialog);
 	}
 
-	@Override
 	public void itemStateChanged(ItemEvent arg0) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	@Override
 	/** This method handles events for the text field. */
     public void actionPerformed(ActionEvent e) {
+    	if(dialog.getClass().equals(CompileDialog.class)){
+    		if(e.getActionCommand().equals(DCCommand.Compile.toString())){
+    			TestCompiler testCompiler = new TestCompiler(model.getProjectCode(), model.getImport("methods"), model.getImport("online"), model.getImport("classes"));
+				testCompiler.compile();
+				model.setCompilerFailures(testCompiler.getFailures());
+    		}
+    		else if(e.getActionCommand().equals(DCCommand.AddMethods.toString())){
+    			JDialog dialog = new AddImportDialog(this.dialog, model, "Nötige Methoden");
+    			dialog.addController(new DialogController(model, dialog));
+				dialog.pack();
+				dialog.setVisible(true);
+				dialog.revalidate();
+    		}
+    		else if(e.getActionCommand().equals(DCCommand.AddClasses.toString())){
+    			JDialog dialog = new AddImportDialog(this.dialog, model, "Nötige Klassen");
+				dialog.addController(new DialogController(model, dialog));
+				dialog.pack();
+				dialog.setVisible(true);
+				dialog.revalidate();
+    		}
+    	}
         //view.getOptionPane().setValue(btnString1);
     }
 
-	@Override
 	public void valueChanged(ListSelectionEvent arg0) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	@Override
-	public JView getView() {
-		// TODO Auto-generated method stub
-		return null;
+	public JDialog getView() {
+		return dialog;
+	}
+	
+	public Model getModel(){
+		return model;
 	}
 
-	@Override
 	/** This method reacts to state changes in the option pane. */
     public void propertyChange(PropertyChangeEvent e) {
 	        String prop = e.getPropertyName();
@@ -125,7 +143,6 @@ public class DialogController implements Controller, PropertyChangeListener, Foc
 	            		dialog.clearAndHide();
 	            }
 	            else if(dialog.getClass().equals(EditOrderDialog.class)){
-	            	System.out.println(value);
 	            	if(value.equals(JOptionPane.OK_OPTION)){
 	            		model.saveOrderFailures();
 	            		dialog.clearAndHide();
@@ -141,10 +158,12 @@ public class DialogController implements Controller, PropertyChangeListener, Foc
 //	            			dialog.clearAndHide();
 	            	}
 	            }
+	            else if(dialog.getClass().equals(CompileDialog.class)){
+	            	dialog.clear();
+	            }
 			}
 		}
 
-	@Override
 	public void focusGained(FocusEvent e) {
 		if(dialog.getClass().equals(EditOrderDialog.class)){
 			if(e.getSource().getClass().equals(JTextArea.class)
@@ -156,7 +175,6 @@ public class DialogController implements Controller, PropertyChangeListener, Foc
 		
 	}
 
-	@Override
 	public void focusLost(FocusEvent e) {
 		if(e.getSource().getClass().equals(JTextArea.class)){
 			model.setOrderFailures((Integer)dialog.get("groupID"), (String)dialog.get("text"));

@@ -37,7 +37,7 @@ public class UserEditor extends JView{
 		menu = new MenuTeacher();
 		this.addMenuToFrame(menu);
 		setupEditor();
-		draw();
+		mainPanel.revalidate();
 	}
 
 	private void setupEditor() {
@@ -136,7 +136,7 @@ public class UserEditor extends JView{
 		setupEditor();
 		this.setController(getController());
 		//setMainContent(mainPanel);
-		this.draw();
+		mainPanel.revalidate();
 	}
 
 }

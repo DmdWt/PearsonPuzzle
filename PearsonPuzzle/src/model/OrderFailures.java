@@ -8,11 +8,15 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.Vector;
 
-
+/**
+ * Klasse enthält statische Methoden, die dazu dienen, Fehler in der Reihenfolge des Lösungsarrays zu finden. 
+ * Methode greift nicht alle Daten vom Model ab, um zu verhindern, dass das Model auch im Schülermodus die richtigen Anordnungen via getter zur verfügung stellen muss. 
+ * In dieser Konzeption greift das Model auf die hier gegebenen statischen Methoden zu und gibt nur das Ergebnis der Test zurück.
+ * @author workspace
+ *
+ */
 public class OrderFailures {
-	public OrderFailures(){
-		
-	}
+	
 	public static boolean testOrder_simple(Model model, String projectCode){
 		String tab;
 		if(model.getTabSize()==0)
@@ -27,22 +31,23 @@ public class OrderFailures {
 			sollutionString=sollutionString+string+"\n";
 		}
 		
-		if(sollutionString.equals(model.getProjectCode()))
+		// XXX: hier wurde am 7.2.2016 trim() ergänzt
+		if(sollutionString.trim().equals(model.getProjectCode()))
 		 	return true;
 		return false;
 	}
 	
 	/**
 	 * Prüft, ob sollutionCode und normalCode gleiche Einträge haben.
-	 * Falls ignoreTabs true gesetzt ist, werden einführende Tabs und Leerzeichen nicht berücksichtigt.
+	 * Falls ignore Tabs gesetzt ist, werden führende und endständige Tabs und Leerzeichen werden nicht berücksichtigt.
 	 * @param sollutionCode	Lösungsvektor
 	 * @param normalCode	Vorgegebener (richtiger) Vektor
 	 * @param ignoreTabs	Tabs beim Vergleich ignorieren
 	 * @return Vektoren sind gleich
 	 */
 	public static boolean testOrder_simple(Vector<String> sollutionCode, Vector<String> normalCode, boolean ignoreTabs){
-		Iterator sollutionIterator = sollutionCode.iterator();
-		Iterator normalIterator = normalCode.iterator();
+		Iterator<String> sollutionIterator = sollutionCode.iterator();
+		Iterator<String> normalIterator = normalCode.iterator();
 		while(sollutionIterator.hasNext() && normalIterator.hasNext()){
 			if(ignoreTabs){
 				if(!((String) sollutionIterator.next()).trim().equals(((String) normalIterator.next()).trim()))
@@ -69,9 +74,7 @@ public class OrderFailures {
 	 */
 	public static LinkedList<Boolean> testOrder_groups(LinkedList<Integer> sortedCode,
 			 Vector<Vector<Integer>> codeLine_GroupMatrix, LinkedHashMap<String, Integer> codeMap, Vector<String> codeVector_normal) {
-		
-		
-//		System.out.println("sortedCode: "+sortedCode);
+			
 		LinkedList<Boolean> groupFailures = new LinkedList<Boolean>();
 		TreeMap<Integer, HashMap<String, Integer>>  treeMap;
 		for(Vector<Integer> groupRule : codeLine_GroupMatrix){
@@ -83,7 +86,20 @@ public class OrderFailures {
 			HashMap<String, Integer> minIndex = new HashMap<String, Integer>();
 			treeMap.clear();
 			for(Integer rule : groupRule){
-				if(rule!= null && rule !=0){
+				if(rule==null){
+					// TODO:  
+				}
+				else if(rule == 0){
+					// Dies stellt den Fall dar, dass die Sortierung dieser Zeile nicht berücksichtigt wird.
+				}
+				else if(rule == -1){
+					if(sortedCode.contains(codeMap.get(codeVector_normal.get(line)))){
+						groupFailures.add(false);			
+						break;
+					}
+				}
+				
+				else{
 					String keyString = codeVector_normal.get(line);
 					
 					// Regel nicht auf gleicher Ebene wie vorhergehende

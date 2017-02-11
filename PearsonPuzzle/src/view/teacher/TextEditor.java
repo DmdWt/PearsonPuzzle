@@ -10,8 +10,8 @@ import java.util.Observable;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -29,7 +29,7 @@ import model.Model;
 import model.access.AccessGroup;
 
 /**
- * View, der dem Lehrer das grafische Bearbeiten von Proekten ermöglicht.
+ * View, der dem Lehrer das grafische Bearbeiten von Projekten ermöglicht.
  * @author workspace
  */
 public class TextEditor extends JView{
@@ -47,10 +47,12 @@ public class TextEditor extends JView{
 	public TextEditor(Model model) {
 		super(model);
 		
-		save=new JButton("Speichern");
-		configure = new JButton("Projekt konfigurieren");
+		save=new JButton("Sichern");
+		save.setIcon(saveIcon);
+		configure = new JButton("Konfigurieren");
+		configure.setIcon(new ImageIcon("rsc/icon/file/config.png"));
 		configFields = new ArrayList <JTextField>();
-		menu = new MenuTeacher(0);
+		menu = new MenuTeacher(model, 0);
 		this.addMenuToFrame(menu);		
 		description = new JTextArea(model.getProjectDescription());
 		
@@ -61,7 +63,7 @@ public class TextEditor extends JView{
 		
 		setupTextEditor();
 		setupConfigPanel();
-		draw();
+		mainPanel.revalidate();
 	}
 	
 	/**
@@ -183,7 +185,7 @@ public class TextEditor extends JView{
 		save.setActionCommand(DCCommand.Save.toString());
 
 		configure.addActionListener(controller);
-		configure.setActionCommand(DCCommand.EditConfig.toString());
+		configure.setActionCommand(DCCommand.Compile.toString());
 		
 		textArea.addFocusListener((DefaultController)controller);
 		textArea.setName("ProjectCode");
@@ -235,7 +237,7 @@ public class TextEditor extends JView{
 		textArea.setTabSize(model.getTabSize());
 		textArea.setText(model.getProjectCode());
 		description.setText(model.getProjectDescription());
-		this.draw();
+		mainPanel.revalidate();
 		// TODO Auto-generated method stub	
 	}
 	

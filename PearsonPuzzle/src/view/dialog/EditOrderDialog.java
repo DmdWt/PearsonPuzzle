@@ -30,8 +30,8 @@ public class EditOrderDialog extends JDialog implements Observer{
 	
 	private static final long serialVersionUID = 6546427675009283113L;
 	public final String DEFAULT_CONTENT = "Dieser Text wird angezeigt, wenn die gewählte Gruppe getestet wird.\n" +
-			"Ist der Test erfolgreich, wird folgendes ausgegeben: \t <eingegebener Text>: Ja\n" +
-			"Ist der Test nicht erfolgreich, wird folgendes ausgegeben: \t <eingegebener Text>: Nein";
+			"Ist der Test erfolgreich, wird folgendes ausgegeben:\t<eingegebener Text>: Ja\n" +
+			"Ist der Test nicht erfolgreich, wird folgendes ausgegeben:\t<eingegebener Text>: Nein";
 	private Model model;
 	private JOptionPane optionPane;
 	private JComboBox<String> orderGroup;
@@ -50,6 +50,7 @@ public class EditOrderDialog extends JDialog implements Observer{
 	private void setupContentPane() {
 		JPanel contentPanel = new JPanel();
     	JPanel dialogPanel = new JPanel();
+    	dialogPanel.setPreferredSize(new Dimension(400,200));
 		orderGroup = new JComboBox<String>();
 		String groupName;
 		
@@ -67,12 +68,14 @@ public class EditOrderDialog extends JDialog implements Observer{
 		
 		
 		dialogPanel.setLayout(new BoxLayout(dialogPanel, BoxLayout.Y_AXIS));
-		dialogPanel.setAlignmentX(CENTER_ALIGNMENT);
-		dialogPanel.add(new JLabel("Geben Sie die Gruppe an, die Sie bearbeiten möchten wollen"));
-		dialogPanel.add(contentPanel);
+		//dialogPanel.setAlignmentX(CENTER_ALIGNMENT);
+		JPanel topPanel = new JPanel();
+		topPanel.add(new JLabel("Fehlerbeschreibung für Gruppe:"));
+		topPanel.add(contentPanel);
+		dialogPanel.add(topPanel);
 		
 		textPanel = new JTextArea();
-		String failureText = model.getOrderFailures(orderGroup.getSelectedIndex());
+		String failureText = model.getOrderFailureText(orderGroup.getSelectedIndex());
 		if(failureText==null || failureText.isEmpty()){
 			textPanel.setText(DEFAULT_CONTENT);
 		}
@@ -166,7 +169,7 @@ public class EditOrderDialog extends JDialog implements Observer{
 	}
 	
 	private void update(){
-		String failureText = model.getOrderFailures(orderGroup.getSelectedIndex());
+		String failureText = model.getOrderFailureText(orderGroup.getSelectedIndex());
 		if(failureText==null || failureText.isEmpty()){
 			textPanel.setText(DEFAULT_CONTENT);
 		}

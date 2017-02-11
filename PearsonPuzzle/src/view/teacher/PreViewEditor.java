@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.Observable;
 import java.util.Vector;
 
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -21,8 +22,10 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
 import javax.swing.TransferHandler;
+import javax.swing.border.Border;
 
 
 import model.Model;
@@ -31,6 +34,7 @@ import controller.Controller;
 import controller.DCCommand;
 import controller.transferHandler.FromTransferHandler;
 import controller.transferHandler.ToSaveTransferHandler;
+import view.Allert;
 import view.JView;
 
 public class PreViewEditor extends JView{
@@ -50,10 +54,12 @@ public class PreViewEditor extends JView{
 		private ButtonGroup dropMode;
 		private LinkedList<JRadioButton> puzzleModeButtons;
 		private JPanel studentPanel;
+		private JTextArea messagePanel;
+		private JButton sort;
 		
 	public PreViewEditor(Model model) {
 		super(model);
-		menu = new MenuTeacher(3);
+		menu = new MenuTeacher(model, 3);
 		addMenuToFrame(menu);
 		if(model.getPuzzlemode()!=null)
 			Puzzlemode = model.getPuzzlemode();
@@ -64,7 +70,7 @@ public class PreViewEditor extends JView{
 		setupPreviewPanel();
 		setupEditPanel();
 		setupButtons();
-		draw();
+		mainPanel.revalidate();
 	}
 	
 	private void setupPreviewPanel(){
@@ -149,6 +155,17 @@ public class PreViewEditor extends JView{
 	}
 	
 	private void setupEditPanel(){
+		messagePanel = new JTextArea();
+		messagePanel.setEditable(false);
+		messagePanel.setLineWrap(true);
+		messagePanel.setWrapStyleWord(true);
+		Border border = BorderFactory.createEmptyBorder();
+		messagePanel.setBorder(BorderFactory.createCompoundBorder(border, 
+	            BorderFactory.createEmptyBorder(2, 2, 2, 2)));
+		messagePanel.setText("Information: In diesem Modus stehen dem Schüler die Reihenfolgen-Muster nicht zur Verfügung. In diesem Modus macht es nur Sinn, den generierten Code zu kompilieren und mit JUnit test zu testen.");
+		if(Puzzlemode!=3)
+			messagePanel.setVisible(false);
+		
 		JPanel selectDragAndDrop = new JPanel();
 		selectDragAndDrop.setLayout(new BoxLayout(selectDragAndDrop, BoxLayout.Y_AXIS));
 		selectDragAndDrop.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -157,8 +174,8 @@ public class PreViewEditor extends JView{
 		
 		puzzleModeButtons = new LinkedList<JRadioButton>();
 		dropMode = new ButtonGroup();
-		ImageIcon[] dragIcons= {new ImageIcon("rsc/icon/Icon_1.jpg"), new ImageIcon("rsc/icon/Icon_2.jpg"), new ImageIcon("rsc/icon/Icon_3.jpg"), new ImageIcon("rsc/icon/Icon_4.jpg")};
-		ImageIcon[] dragIcons_pressed = {new ImageIcon("rsc/icon/Icon_1_pressed.jpg"), new ImageIcon("rsc/icon/Icon_2_pressed.jpg"), new ImageIcon("rsc/icon/Icon_3_pressed.jpg"), new ImageIcon("rsc/icon/Icon_4_pressed.jpg")};
+		ImageIcon[] dragIcons= {new ImageIcon("rsc/icon/Drag_n_Drop/Icon_1.jpg"), new ImageIcon("rsc/icon/Drag_n_Drop/Icon_2.jpg"), new ImageIcon("rsc/icon/Drag_n_Drop/Icon_3.jpg"), new ImageIcon("rsc/icon/Drag_n_Drop/Icon_4.jpg")};
+		ImageIcon[] dragIcons_pressed = {new ImageIcon("rsc/icon/Drag_n_Drop/Icon_1_pressed.jpg"), new ImageIcon("rsc/icon/Drag_n_Drop/Icon_2_pressed.jpg"), new ImageIcon("rsc/icon/Drag_n_Drop/Icon_3_pressed.jpg"), new ImageIcon("rsc/icon/Drag_n_Drop/Icon_4_pressed.jpg")};
 		for(int i=0; i<dragIcons.length;i++){
 			JRadioButton radioButton = new JRadioButton();
 			radioButton.setIcon(dragIcons[i]);
@@ -170,6 +187,10 @@ public class PreViewEditor extends JView{
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 					Puzzlemode = n;
+					if(n==3)
+						messagePanel.setVisible(true);
+					else
+						messagePanel.setVisible(false);
 					update();
 				}
 			});
@@ -178,10 +199,10 @@ public class PreViewEditor extends JView{
 			selectDragAndDrop.add(radioButton);
 		}
 		selectDragAndDrop.add(Box.createRigidArea(new Dimension(0,10)));
-		save = new JButton("Speichern");
-		save.setAlignmentX(Component.LEFT_ALIGNMENT);
-		selectDragAndDrop.add(save);
+		
+		//selectDragAndDrop.add(save);
 		mainPanel.add(selectDragAndDrop, BorderLayout.LINE_START);
+		mainPanel.add(messagePanel, BorderLayout.SOUTH);
 	}
 	private DefaultListModel<String> makeDefaultListModel(){
 		DefaultListModel<String> listModel = new DefaultListModel<String>();
@@ -195,15 +216,26 @@ public class PreViewEditor extends JView{
 		}
 		return listModel;
 	}
+	
 	private void setupButtons(){
 		JPanel buttonPanel = new JPanel();
 		buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
 		randomize = new JButton("<html><body><p align=\"center\">Liste neu<br>randomisieren</p></body></html>.");
 		randomize.setAlignmentX(Component.CENTER_ALIGNMENT);
+		randomize.setIcon(new ImageIcon("rsc/icon/file/dice_white.png"));
+		save = new JButton("<html><body text-align=\"center\"><p align=\"center\">D&D Modus<br>Speichern</p></body></html>");
+		save.setIcon(saveIcon);
+		save.setAlignmentX(Component.CENTER_ALIGNMENT);
+		sort = new JButton("<html><body text-align=\"center\"><p align=\"center\">Sortierung<br>Speichern</p></body></html>");
+		sort.setIcon(new ImageIcon("rsc/icon/file/puzzle.png"));
+		sort.setAlignmentX(Component.CENTER_ALIGNMENT);
 		buttonPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 		buttonPanel.add(Box.createRigidArea(new Dimension(0,10)));
 		buttonPanel.add(randomize);
 		buttonPanel.add(Box.createRigidArea(new Dimension(0,10)));
+		buttonPanel.add(sort);
+		buttonPanel.add(Box.createRigidArea(new Dimension(0,10)));
+		buttonPanel.add(save);
 		mainPanel.add(buttonPanel, BorderLayout.LINE_END);
 		
 	}
@@ -212,18 +244,21 @@ public class PreViewEditor extends JView{
 	 * Controller hinzuzufügen
 	 */
 	public void addController(Controller controller){
-		// TODO: In den offiziellen Controller auslagern
-		//saveDropList.addMouseListener((DefaultController)controller);
+//		saveDropList.addMouseListener((DefaultController)controller);
 //		compileButton.addActionListener(controller);
 //		compileButton.setActionCommand(DCCommand.Compile.toString());
 //		testButton.setActionCommand(DCCommand.TestCode.toString());
 //		testButton.addActionListener(controller);
 		
 		randomize.setName("randomize");
-		randomize.setActionCommand(DCCommand.Randomize.toString());
+		randomize.setActionCommand(DCCommand.Save.toString());
 		randomize.addActionListener(controller);
+		save.setName("save");
 		save.setActionCommand(DCCommand.Save.toString());
 		save.addActionListener(controller);
+		sort.setName("sort");
+		sort.setActionCommand(DCCommand.Save.toString());
+		sort.addActionListener(controller);
 		
 		menu.addActionListener(controller);
 	}
@@ -235,12 +270,17 @@ public class PreViewEditor extends JView{
 	public void update() {
 		mainPanel.remove(studentPanel);
 		setupPreviewPanel();
-		draw();
+		mainPanel.revalidate();
 	}
 
 	@Override
 	public void update(Observable o, Object arg) {
-		update();		
+		if(arg!=null && arg.equals(Allert.code_not_fully_sorted))
+			this.showDialog(Allert.code_not_fully_sorted);
+		else if(arg != null && arg.equals("dropMode"))
+			update();
+		else if(arg!=null && arg.equals(DCCommand.Save))
+			update();
 	}
 
 }

@@ -35,7 +35,7 @@ public class LoginController implements Controller{
 		model.setUsername(username.getText());
 		view.update();
 	}
-	@Override
+
 	public void valueChanged(ListSelectionEvent arg0) {
 		// TODO Auto-generated method stub
 		
@@ -76,10 +76,12 @@ public class LoginController implements Controller{
 		// TODO Auto-generated method stub
 		
 	}
-	@Override
+
 	public JView getView() {
-		// TODO Auto-generated method stub
-		return null;
+		return view;
+	}
+	public Model getModel(){
+		return model;
 	}
 }
 	/*

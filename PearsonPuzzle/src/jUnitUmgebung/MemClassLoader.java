@@ -3,6 +3,13 @@ package jUnitUmgebung;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Hält Klassen in einer Hash Map nach Namen sortiert zum Abruf bereit.
+ * Der Konstruktor entspricht dem des System-ClassLoaders. 
+ * @author workspace
+ *
+ */
+
 public class MemClassLoader extends ClassLoader
 {
 	  private final Map<String, MemJavaFileObject> classFiles =

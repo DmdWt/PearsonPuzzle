@@ -24,7 +24,7 @@ public class OptionConfiguration extends JView{
 		setupConfigPanel();
 		menu = new MenuTeacher();
 		this.addMenuToFrame(menu);
-		draw();
+		mainPanel.revalidate();
 	}
 	
 	private void setupConfigPanel(){

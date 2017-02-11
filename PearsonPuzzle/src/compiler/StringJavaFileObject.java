@@ -3,6 +3,11 @@ import java.net.URI;
 
 import javax.tools.*;
 
+
+/**
+ * String Java File Object hät den Sourcecode in kompilierbarer Form bereit.
+ * @author workspace
+ */
 public class StringJavaFileObject extends SimpleJavaFileObject
 {
   private final CharSequence code;

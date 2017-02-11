@@ -23,8 +23,8 @@ public class UserDBaccess {
 	 Connection conn;
 	 private final static int length_projectName = 36;
 	 private final static int length_projectDescription = 1024;
+	 private final static 	String dbUrl = "jdbc:derby:database;create=true";
 	 public UserDBaccess() throws SQLException {
-		String dbUrl = "jdbc:derby:database;create=true";
 		conn = DriverManager.getConnection(dbUrl);
 		//derby.ui.codeset
 		}
@@ -207,9 +207,14 @@ public class UserDBaccess {
 		   //FIXME imports länge = 100 ändern
 		   try{
 			   stmt.executeUpdate("CREATE TABLE Projects ( " +
-				   		"pName varchar("+length_projectName+") UNIQUE, " + 
-					    "randomName varchar(15) UNIQUE"+
-				   		"description varchar("+length_projectDescription+"), " +
+					   "pName varchar("+length_projectName+") UNIQUE, " +
+				   		"randomName varchar(15) UNIQUE, " +				     
+				   		"description varchar("+length_projectDescription+"), " +				     
+				   		"jUnitCode varchar(1000), " +				     
+				   		"onlineImports varchar(100), " +				     
+				   		"localImports varchar(1500), " +				     
+				   		"methods varchar(1000), " +				     
+				   		"puzzlemode INT, " +
 				   		"tabSize INT)");
 		   }
 		   catch(Exception e){ //Tabelle existiert bereits
@@ -242,7 +247,7 @@ public class UserDBaccess {
 				   createProject(randomname, codeString, randomKeys, linelength);
 		   }
 			   try{
-				   createOrderfailurMassage(randomname+"orderfailure");
+				   createOrderfailurMassage(randomname+"ORDERFAILURE");
 			   }catch(Exception e2){
 				   //TODO:besseres exceptionhandling (Table allready exists)
 			   }
@@ -280,7 +285,7 @@ public class UserDBaccess {
 				   
 			   stmt.execute("CREATE TABLE "+randomName+" ( " +
 				   		"lineKey int PRIMARY KEY, " +	
-				   		"codeLine varchar("+ Math.max(linelength,150)+"), " +	
+				   		"codeLine varchar("+ Math.max(linelength,200)+"), " +	
 				   		"randomKey int)");
 
 			   
@@ -291,7 +296,7 @@ public class UserDBaccess {
 				   		+ ""+randomKeys.get(i).intValue()+")");
 			   }
 		   }
-		   catch(SQLException e){
+		   catch(SQLException e){ e.printStackTrace();
 			   				   return;
 				   }
 	
@@ -560,7 +565,7 @@ public class UserDBaccess {
 				   success = true;
 				   ordernumber=i;
 			   }catch(Exception e){
-				   //TODO: besseres Exception handling
+				   //TODO: besseres Exception handling (table already exists)
 				  
 			   }
 			}
@@ -573,6 +578,7 @@ public class UserDBaccess {
 			   }
 			
 		} 	catch (SQLException e1) {
+			// FIXME: für den Import muss hier die Exception abgefangen werden, das bei 'Update randomname' ein zu kleiner Vektor übergeben wurde.
 				// TODO Auto-generated catch block
 			System.out.println("es gab ein Problem bei addOrder.");
 				e1.printStackTrace();
@@ -700,16 +706,17 @@ public class UserDBaccess {
 				   stmt.executeUpdate("DROP TABLE "+randomname);
 				   }
 				   //löschen aller orderFailureTabellen
-				   if(doesTableExist(randomname+"orderfailure")){
-					   stmt.executeUpdate("DROP TABLE "+randomname+"orderfailure");
+				   if(doesTableExist(randomname+"ORDERFAILURE")){
+					   stmt.executeUpdate("DROP TABLE "+randomname+"ORDERFAILURE");
 				   }
 			   }
 			   
 			   
 		   }
 		   catch(SQLException e){
-			   if(e.getSQLState().equals("XCL16")) // while-Schleife wurde verlassen ( Error: ResultSet not open. Operation '<operation>' not permitted. Verify that autocommit is OFF.)
-			   { }
+			   if(e.getSQLState().equals("XCL16")|| // while-Schleife wurde verlassen ( Error: ResultSet not open. Operation '<operation>' not permitted. Verify that autocommit is OFF.)
+				  e.getSQLState().equals("42X05") || e.getSQLState().equals("42Y55"))// Table/View '<objectName>' does not exist.
+				   {}
 			   else e.printStackTrace();}
 		   
 		   try{
@@ -725,7 +732,12 @@ public class UserDBaccess {
 		   stmt.executeUpdate("CREATE TABLE Projects ( " +
 				   "pName varchar("+length_projectName+") UNIQUE, " +
 			   		"randomName varchar(15) UNIQUE, " +				     
-			   		"description varchar("+length_projectDescription+"), " +
+			   		"description varchar("+length_projectDescription+"), " +				     
+			   		"jUnitCode varchar(1000), " +				     
+			   		"onlineImports varchar(100), " +				     
+			   		"localImports varchar(1500), " +				     
+			   		"methods varchar(1000), " +				     
+			   		"puzzlemode INT, " +
 			   		"tabSize INT)");
 //		   		"pName varchar("+length_projectName+") UNIQUE, " +   		
 //		   		"imports varchar(100) , " +  
@@ -733,6 +745,7 @@ public class UserDBaccess {
 //		   		"tabSize INT)");
 		   
 		   //stmt.close();
+
 	   }
 	   
 	   protected void createTable(AccessGroup accessGroup) throws SQLException{
@@ -1029,7 +1042,7 @@ public class UserDBaccess {
 		   } catch (SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-				return "databasefailur occurred";
+				return "";
 			}
 	}
 	
@@ -1037,6 +1050,7 @@ public class UserDBaccess {
 	public boolean doesTableExist(String tablename){
 		try{
 		Statement stmt = conn.createStatement();
+		System.out.println(tablename);
 		stmt.executeQuery("SELECT * FROM "+tablename+"");
 		return true;
 		}catch(SQLException e){
@@ -1050,6 +1064,17 @@ public class UserDBaccess {
 	}
 	
 	
+	public int countOrders(String randomname){
+		int number = 0;
+		for(int index = 1; doesOrderExist(randomname,index-1); index++){
+			number=index;
+		}
+			return number;
+		}
+		
+		
+	
+	
 	//---------------------------------------------------Export-Import------------------------------
 	
 	
@@ -1059,16 +1084,28 @@ public class UserDBaccess {
     	if(!folder.exists()){
     		folder.mkdir();
     	}
-
+    	String lokTableName = tablename;
+    	if (tablename.length()==16)
+        	lokTableName = tablename.substring(1,16);
+    	if (tablename.length()==17)
+        	lokTableName = tablename.substring(2,17);
+        	
+//    	// Anzahl der Reihenfolgen bestimmen & an den outputnamen anhängen
+//    	if(tablename.length()==15){
+//    		int orderCount= countOrders(tablename);
+//    		tablename = orderCount + tablename;
+//    		System.out.println(tablename);
+//    	}
 		
 		// SYSCS_EXPORT_TABLE akzeptiert nur Tabellennamen in UpperCase. 
 		String tablenameUC = tablename.toUpperCase();
+    	String lokTableNameUC = lokTableName.toUpperCase();
 		
 		
 		Statement stmt;
 			try {
 				stmt = conn.createStatement();
-				stmt.execute("CALL SYSCS_UTIL.SYSCS_EXPORT_TABLE (null, '"+tablenameUC+"', '" + diskplace + File.separator + tablename + ".dat"+ "', '%', null, null)");
+				stmt.execute("CALL SYSCS_UTIL.SYSCS_EXPORT_TABLE (null, '"+lokTableNameUC+"', '" + diskplace + File.separator + tablename + ".dat"+ "', '%', null, null)");
 			    return true;
 			} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -1080,9 +1117,17 @@ public class UserDBaccess {
 	
 	
 	public boolean importTable(String tablename, String diskplace){
+		try {
+				conn.close();
+		} catch (SQLException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
 	String tablenameUC = tablename.toUpperCase();
 	Statement stmt;
 	try {
+		conn = DriverManager.getConnection(dbUrl);
 		stmt = conn.createStatement();
 //		short s =1;
 //		Import.importTable(conn, "", tablename,  diskplace + File.separator + tablename + ".dat", ";", "%", "UTF-8", s, false);
@@ -1092,7 +1137,8 @@ public class UserDBaccess {
 	    return true;
 	} catch (SQLException e) {
 	// TODO Auto-generated catch block
-	e.printStackTrace();
+		e.getCause();
+//	e.printStackTrace();
 	return false;
 	}
 }
@@ -1126,6 +1172,9 @@ public class UserDBaccess {
 //		}
 //	
 	
-	
+	public void refreshConnection() throws SQLException{
+		conn.close();
+		conn = DriverManager.getConnection(dbUrl);
+	}
 	
 }

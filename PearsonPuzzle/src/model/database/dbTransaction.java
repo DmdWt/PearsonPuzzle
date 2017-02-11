@@ -35,7 +35,7 @@ public class dbTransaction implements Transaction{
 			userDBaccess = new UserDBaccess();
 			app = new App();
 //			exportAll("C:\\java\\outputfolder");
-//			replaceDb("exportdatei.zip","C:\\java\\outputfolder");
+			replaceDb("exportdatei.zip","C:\\java\\outputfolder");
 			//userDBaccess.resetAll();
 		} catch (SQLException e) {
 			if(((SQLException) e).getSQLState().equals("XJ040")){ // Failed to start database '<databaseName>', see the next exception for details.
@@ -230,6 +230,7 @@ public class dbTransaction implements Transaction{
 		   for (int j=0; j<length; j++) {
 		     Randomname = Randomname + (char) ('a' + 26*Math.random());  // 'a' + (0..23) = ('a' .. 'z')
 		   }
+		   Randomname=Randomname.toUpperCase();
 		   alreadyexists=userDBaccess.doesRandomnameExist(Randomname);
 		}
 		return Randomname;
@@ -593,7 +594,7 @@ public class dbTransaction implements Transaction{
 			LinkedList<String> orderFailureText) {
 		String randomname = getRandomName(projectname);
 		
-		String failurname = randomname+"orderfailure";
+		String failurname = randomname+"ORDERFAILURE";
 		for(int index=0;index<orderFailureText.size();index++){
 		userDBaccess.addOrderfailurMassage(failurname, index, orderFailureText.get(index));
 		}
@@ -601,20 +602,20 @@ public class dbTransaction implements Transaction{
 
 	public boolean updateOrderFailure(String projectname, int ordernumber, String orderFailureText){
 		String randomname = getRandomName(projectname);
-		String failurname = randomname+"orderfailure";
+		String failurname = randomname+"ORDERFAILURE";
 		return userDBaccess.updateOrderfailurMassage(failurname, ordernumber, orderFailureText);
 	}
 	
 	public String getOrderFailure(String projectname, int ordernumber){
 		String randomname = getRandomName(projectname);
-		String failurname = randomname+"orderfailure";
+		String failurname = randomname+"ORDERFAILURE";
 		return userDBaccess.getOrderFailurMassage(failurname, ordernumber);
 	}
 	
 	public LinkedList<String> getOrderFailure(String projectname){
 		LinkedList<String> OrderFailureText = new LinkedList<String>();
 		String randomname = getRandomName(projectname);
-		String failurname = randomname+"orderfailure";
+		String failurname = randomname+"ORDERFAILURE";
 		for(int ordernumber= 0; userDBaccess.doesOrderExist(randomname, ordernumber);ordernumber++){
 		OrderFailureText.add(getOrderFailure(projectname, ordernumber));
 		}
@@ -627,6 +628,7 @@ public class dbTransaction implements Transaction{
 	public boolean exportAll(String diskplace){
 		// Ein Vector wird mit den Namen aller existierenden Tabellen gefüllt
 		String randomname = new String();
+		int orderCount = 0;
 		ArrayList<String> ProjectList = getProjects(0);
 		Vector<String> TableVector = new Vector<String>();
 		TableVector.add("projects");
@@ -635,10 +637,10 @@ public class dbTransaction implements Transaction{
 		try {
 			for(int index=0; index < ProjectList.size(); index++){
 				randomname=userDBaccess.getRandomName(ProjectList.get(index));
-				
-				TableVector.add(randomname);
-				if(userDBaccess.doesTableExist(randomname+"orderfailure")){
-					TableVector.add(randomname+"orderfailure");
+				orderCount = userDBaccess.countOrders(randomname);
+				TableVector.add(orderCount+randomname);
+				if(userDBaccess.doesTableExist(randomname+"ORDERFAILURE")){
+					TableVector.add(randomname+"ORDERFAILURE");
 				}
 			}
 		} catch (SQLException e) {
@@ -675,25 +677,50 @@ public class dbTransaction implements Transaction{
 		//befüllen fe
 		String fileName = new String();
 		String tableName = new String();
+		String existTableName = new String();
 		String[] codeString = new String[0];
 		ArrayList<Integer> randomKeys = new ArrayList<Integer>();
 		Vector<String> dataNames = app.unZipIt(importfile, diskplace);
+		
+		
 		for(int index =0;index < dataNames.size(); index++){
 			fileName=dataNames.get(index);
 			tableName=fileName.substring(0,fileName.length()-4);
-			if(userDBaccess.doesTableExist(tableName)){ 
-				userDBaccess.importTable(tableName, diskplace);
-			}else{	if(tableName.length()==15){									//case1: eine Project-tabelle
-						userDBaccess.createProject(tableName, codeString, randomKeys, 0);}
-					else{														//case1: eine Orderfailre-tabelle
+			existTableName = tableName;
+			if(existTableName.length()==16)	existTableName = existTableName.substring(1, 16);
+			if(existTableName.length()==17)	existTableName = existTableName.substring(2, 17);
+			
+			
+			if(userDBaccess.doesTableExist(existTableName)){ 
+				userDBaccess.importTable(existTableName, diskplace);
+			}else{	if(tableName.length()==16){									//case1: eine Project-tabelle (0-9 Reihenfolgen)
+						int orderCount = Integer.parseInt(tableName.substring(0,1));
+						
+						System.out.println(existTableName);
+						Vector<Vector<Integer>>orderCountVector=new Vector<Vector<Integer>>(orderCount);
+						for(Vector<Integer> orderVector : orderCountVector){
+							userDBaccess.addOrder(existTableName, orderVector);
+						}
+						
+						userDBaccess.createProject(existTableName, codeString, randomKeys, 0);}
+			else{	
+				if(tableName.length()==17){									//case1: eine Project-tabelle (10-99 Reihenfolgen)
+						int orderCount = Integer.parseInt(tableName.substring(0,2));
+						Vector<Vector<Integer>>orderCountVector=new Vector<Vector<Integer>>(orderCount);
+						//anlegen der nötigen reihenfolgenspalten
+						for(Vector<Integer> orderVector : orderCountVector){
+							userDBaccess.addOrder(existTableName, orderVector);
+							}
+						userDBaccess.createProject(existTableName, codeString, randomKeys, 0);}
+					else{														//case2: eine Orderfailre-tabelle
 						try {
 							userDBaccess.createOrderfailurMassage(tableName);
 						} catch (SQLException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
-					}
-				userDBaccess.importTable(tableName, diskplace);
+					}}
+				userDBaccess.importTable(existTableName, diskplace);
 			}
 			
 			//datei löschen

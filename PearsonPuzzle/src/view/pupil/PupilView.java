@@ -1,6 +1,7 @@
 package view.pupil;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.util.Observable;
 
 import javax.swing.JButton;
@@ -32,7 +33,7 @@ public class PupilView extends JView{
 		menu = new MenuPupil();
 		this.addMenuToFrame(menu);
 		setupProjectList();
-		draw();
+		mainPanel.revalidate();
 	}
 	
 	/**
@@ -44,18 +45,29 @@ public class PupilView extends JView{
 		projectList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		new JScrollPane(projectList);
 		listSelectionModel = projectList.getSelectionModel();
+		if(model.getProjectListID()!=null)
+			listSelectionModel.setSelectionInterval(model.getProjectListID(), model.getProjectListID());
 		// Liste wird nicht umgebrochen, sondern vertikal weitergeführt
 		projectList.setLayoutOrientation(JList.VERTICAL);
 		projectList.setFixedCellHeight(20);
 		projectList.setFixedCellWidth(200);
+		JScrollPane scrollPanel_pL = new JScrollPane(projectList);
+		scrollPanel_pL.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		scrollPanel_pL.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		scrollPanel_pL.setPreferredSize(new Dimension(250,250));
+		mainPanel.add(scrollPanel_pL, BorderLayout.LINE_START);
 		//projectList.setPreferredSize(new Dimension(250,250));		
-		mainPanel.add(projectList, BorderLayout.LINE_START);
 		// Zeilen werden umgebrichen und Wortgrenzen beachtet
 		projectDescription.setLineWrap(true);
 		projectDescription.setWrapStyleWord(true);
 		projectDescription.setEditable(false);
 		projectDescription.setSize(200, 200);
-		mainPanel.add(projectDescription, BorderLayout.EAST);
+		JScrollPane scrollPanel_pD = new JScrollPane(projectDescription);
+		scrollPanel_pD.setPreferredSize(new Dimension(300,300));
+		scrollPanel_pD.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);	
+		mainPanel.add(scrollPanel_pD, BorderLayout.EAST);
+		
+		mainPanel.add(scrollPanel_pD, BorderLayout.EAST);
 		mainPanel.add(enter, BorderLayout.SOUTH);
 	}
 	

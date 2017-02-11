@@ -14,6 +14,7 @@ public class PPException extends Exception{
 	public final static String anotherDatasetExists = "<html>Datensatz mit gleichem Namen existiert bereits.<br>Wollen sie die existierende Datensatz überschreiben?</html>";
 	public final static String anotherInstanceIsRunnign = "<html><body>Das Programm läuft bereits.<br>Sollte das Problem in einigen Minuten weiterhin auftreten,<br>versuchen Sie, das Programm über den Task Manager zu beenden.<br><b>Vorsicht:</b> dabei können ungespeicherte Änderungen verloren gehen.</body></html>";
 	public final static String databaseIsEmpty = "Keine Einträge in der Datenbank gefunden";
+	public final static String NoClassName = "Es wurde kein Klassenname für den Unittest angegeben. Daher kann nicht kompiliert werden.";
 	private String answer;
 	String[] yesNoCancelOptions = { "Ja", "Nein", "Abbrechen" };
 	String[] yesNoOptions = {"Ja", "Nein"};

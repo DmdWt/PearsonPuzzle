@@ -1,12 +1,13 @@
 package controller;
 
-import jUnitUmgebung.JUnitRunner;
+import jUnitUmgebung.UnitRunner;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.ItemEvent;
+import java.io.File;
 
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.TableModelEvent;
@@ -18,28 +19,17 @@ import javax.swing.*;
 
 import org.junit.runner.Result;
 
-import compiler.CodeCompletion;
 import compiler.TestCompiler;
 
+import mobileVersion.Applet;
 import model.Model;
 import model.access.AccessGroup;
-import view.Allert;
-import view.LoginView;
-import view.JView;
-import view.PPException;
-import view.pupil.CodeSortView;
-import view.pupil.PupilView;
-import view.teacher.OptionConfiguration;
-import view.teacher.ConfigEditor;
-import view.teacher.PreViewEditor;
-import view.teacher.TeacherView;
-import view.teacher.TextEditor;
-import view.teacher.UnitEditor;
-import view.teacher.UserEditor;
+import view.*;
+import view.pupil.*;
+import view.teacher.*;
 
 /**
- * Klasse dient dazu, die standardmäßige Benutzeroberfläche aufzurufen und 
- * mit dem Controller zu verknüpfen.
+ *Śtandard-Controller der PearsonPuzzle Anwendung.
  * @author workspace
  */
 public class DefaultController implements Controller, TableModelListener, FocusListener{
@@ -50,20 +40,21 @@ public class DefaultController implements Controller, TableModelListener, FocusL
 	public DefaultController(Model model, JView view){
 		this.model=model;
 		this.view=view;
-		view.addController(this);
-		view.setController(this);
 	}
 	
-	@Override
 	public void actionPerformed(ActionEvent e) {
-		// !!!ACHTUNG!!! hier wird eine Exception geworfen, falls zu diesem Action Event kein Kommando existiert!
-		act(DCCommand.valueOf(e.getActionCommand()), e);
+		try {
+			act(DCCommand.valueOf(e.getActionCommand()), e);
+		} catch (PPException ppe) {
+			ppe.printMessage();
+		}
 	}
 
 	/**
 	 * Legt fest, was bei einem Action Event (z.B. Button drücken) passiert
+	 * @throws PPException 
 	 */
-	private void act(DCCommand cmd, ActionEvent e){
+	private void act(DCCommand cmd, ActionEvent e) throws PPException{
 		// Es erfolgt Warnung, wenn Projekt noch nicht gespeicher wurde
 		if( (view.getClass().equals(TextEditor.class)  
 				|| view.getClass().equals(UnitEditor.class)
@@ -101,6 +92,16 @@ public class DefaultController implements Controller, TableModelListener, FocusL
 			}		
 		}
 		switch(cmd){
+			case Applet:
+				model.deleteObservers();
+				view.exit();
+				Applet app = new Applet();
+				app.createGUI(model);
+//				AppletView aplView = new ProjectListAView(model);
+//				AppletMenu menu = new AppletMenu();
+//				view.initializeAppletView(aplView, menu);
+//				model.addObserver(aplView);
+				break;
 			case Login:
 				if(view.getClass().equals(LoginView.class))
 					((LoginView)view).submitChangeToController();
@@ -159,6 +160,7 @@ public class DefaultController implements Controller, TableModelListener, FocusL
 					view.showDialog(Allert.noProjectSelected);
 				else{
 					view.quitView();
+					
 					this.view=new CodeSortView(model);
 					view.addController(this);
 				}
@@ -167,10 +169,10 @@ public class DefaultController implements Controller, TableModelListener, FocusL
 				view.quitView();
 				// Daten werden aus der Datenbank geladen
 				model.fetchAll();
-				if(model.getAccessGroup().equals(AccessGroup.STUDENT))
-					this.view= new PupilView(model);
-				else
+				if(model.getAccessGroup().equals(AccessGroup.TEACHER))
 					this.view= new TeacherView(model);
+				else
+					this.view= new PupilView(model);
 				view.addController(this);
 				break;
 			case Admin:
@@ -195,12 +197,6 @@ public class DefaultController implements Controller, TableModelListener, FocusL
 				startView.addController(this);
 				this.view=startView;
 				view.update();
-				break;
-			case Randomize:
-				if(view.getClass().equals(PreViewEditor.class)){
-					model.saveProject();
-					view.update(null, DCCommand.Randomize);
-				}
 				break;
 			case ShowHelp:
 				view.showDialog(DCCommand.ShowHelp, false);
@@ -241,7 +237,18 @@ public class DefaultController implements Controller, TableModelListener, FocusL
 					act(DCCommand.EditUsers, null);
 				}
 				else if(view.getClass().equals(PreViewEditor.class)){
-					model.savePuzzlemode(((PreViewEditor) view).getPuzzleModus());
+					if(((Component) e.getSource()).getName()!=null && ((Component) e.getSource()).getName().equals("randomize"))
+					{
+						model.saveProject(true);
+						//view.update(null, DCCommand.Save);
+					}
+					else if(((Component) e.getSource()).getName()!=null && ((Component) e.getSource()).getName().equals("sort")){
+						model.savePuzzlemode(((PreViewEditor) view).getPuzzleModus());
+						model.saveRandomisation();
+					}
+					else if(((Component) e.getSource()).getName()!=null && ((Component) e.getSource()).getName().equals("save")){
+						model.savePuzzlemode(((PreViewEditor) view).getPuzzleModus());
+					}
 				}
 				break;
 			case DeleteProject:
@@ -286,7 +293,7 @@ public class DefaultController implements Controller, TableModelListener, FocusL
 //					else if(compName.equals("ProjectDescription"))
 //						model.setProjectDescription(compValue);
 					if(compName.equals("TabSize"))
-						model.setTabSize(Integer.parseInt(compValue));
+						model.setTabSize(compValue);
 					else if(compName.equals("ProjectName"))
 						model.setProjectName(compValue);
 					else if(compName.equals("Grade")){
@@ -296,14 +303,6 @@ public class DefaultController implements Controller, TableModelListener, FocusL
 				else 
 					throw new RuntimeException("View Componente falsch verknüpft!");
 				
-				
-				
-				
-				
-				
-				
-				
-
 //				if(view.getClass().equals(TextEditor.class)){
 //					ArrayList <JTextField> inputFields = (((TextEditor)view).getInputComponents());
 //					model.setTabSize(Integer.parseInt(inputFields.get(0).getText()) % 10);
@@ -314,52 +313,82 @@ public class DefaultController implements Controller, TableModelListener, FocusL
 			case AddOrder:
 				model.addTestGroup();
 				break;
-			case Compile:
-				TestCompiler testCompiler = new TestCompiler();
+			case Compile:		
 				if(model.getAccessGroup()==AccessGroup.STUDENT){
-					testCompiler.compileCode(model.getSolutionStrings());
+					TestCompiler testCompiler = new TestCompiler(model.getSollution(), model.getImport("methods"), model.getImport("online"), model.getImport("classes"));
+					testCompiler.compile();
 					model.setCompilerFailures(testCompiler.getFailures());
+					//TestCompiler testCompiler = new TestCompiler();
+					//testCompiler.compileCode(model.getSolutionStrings());
+					//model.setCompilerFailures(testCompiler.getFailures());
 				}
-				else if(model.getAccessGroup()==AccessGroup.TEACHER){
-//					JUnitRunner unitRunner = new JUnitRunner(((UnitEditor) view).getContent(), model.getProjectCode(), model.getImport("methods"));
-//					unitRunner.addOnlineImport(model.getImport("online"));
-//					unitRunner.addClasses(model.getImport("classes"));
-//					unitRunner.compileClasses_ToDisk();
-//					model.setCompilerFailures(unitRunner.getFailures());
-					
-					testCompiler.compileCode(((UnitEditor)view).getContent());
-					testCompiler.compileCode(model.getProjectCode());
-					model.setCompilerFailures(testCompiler.getFailures());
-				}
+				else if(model.getAccessGroup()==AccessGroup.TEACHER)
+					if(view.getClass().equals(UnitEditor.class)){
+						UnitRunner unitRunner = new UnitRunner(((UnitEditor) view).getContent(), model.getProjectCode(), model.getImport("methods"), model.getImport("online"), model.getImport("classes"));
+//						unitRunner.addOnlineImport(model.getImport("online"));
+//						unitRunner.addClasses(model.getImport("classes"));
+						unitRunner.compile();
+						model.setCompilerFailures(unitRunner.getFailures());
+					}
+					else{
+						TestCompiler testCompiler = new TestCompiler(model.getProjectCode(), model.getImport("methods"), model.getImport("online"), model.getImport("classes"));
+						testCompiler.compile();
+						model.setCompilerFailures(testCompiler.getFailures());
+						view.showDialog(DCCommand.Compile, false);
+					}
+				break;
+			case Test:
+					model.testOrderOfSollution();
 				break;
 			case TestCode:
 				Result result;
-				if(model.getAccessGroup()==AccessGroup.STUDENT){
-					System.out.println(model.getSollution());
+				if(model.getAccessGroup()==AccessGroup.TEACHER){
+					UnitRunner unitRunner = new UnitRunner(((UnitEditor) view).getContent(), model.getProjectCode(), model.getImport("methods"), model.getImport("online"), model.getImport("classes"));
+//					unitRunner.addOnlineImport(model.getImport("online"));
+//					unitRunner.addClasses(model.getImport("classes"));
+					result = unitRunner.run();
+					//System.out.println(result.getFailures());
+					//System.out.println("Anzahl der Fehler im Junit Testlauf:"+result.getFailureCount());;
+					model.setJunitFailures(result);
+				}
+				else{
+					//System.out.println(model.getSollution());
 					
 					//model.testSolution();
-					model.testOrderOfSollution();
+					
 					//result = JUnitRunner.run();
-					if(model.getJUnitCode()!=null){ // FIXME: diese if-Abfrage gehört in den UnitRunner
-						JUnitRunner unitRunner = new JUnitRunner(model.getJUnitCode(), model.getProjectCode(), model.getImport("methods"));
-						unitRunner.addOnlineImport(model.getImport("online"));
-						unitRunner.addClasses(model.getImport("classes"));
+					if(model.getJUnitCode()!=null && !model.getJUnitCode().isEmpty() && !model.getJUnitCode().equals(UnitEditor.DEFAULT_UNIT_CODE)){ //Junit Test soll nur erfolgen, wenn auch einer definerit ist
+						UnitRunner unitRunner = new UnitRunner(model.getJUnitCode(), model.getProjectCode(), model.getImport("methods"),model.getImport("online"), model.getImport("classes"));
+//						unitRunner.addOnlineImport(model.getImport("online"));
+//						unitRunner.addClasses(model.getImport("classes"));
 						result = unitRunner.run();
-						System.out.println(result.getFailures());
-						System.out.println("Anzahl der Fehler im Junit Testlauf:"+result.getFailureCount());;
+						//model.setCompilerFailures(unitRunner.getFailures());
+						//System.out.println(result.getFailures());
+						//System.out.println("Anzahl der Fehler im Junit Testlauf:"+result.getFailureCount());;
 						model.setJunitFailures(result);
 					}
 				}
-				else{
-					JUnitRunner unitRunner = new JUnitRunner(((UnitEditor) view).getContent(), model.getProjectCode(), model.getImport("methods"));
-					unitRunner.addOnlineImport(model.getImport("online"));
-					unitRunner.addClasses(model.getImport("classes"));
-					result = unitRunner.run();
-					System.out.println(result.getFailures());
-					System.out.println("Anzahl der Fehler im Junit Testlauf:"+result.getFailureCount());;
-					model.setJunitFailures(result);
-				}
 				break;
+			case DB_Export:
+				JFileChooser fc_exp = new JFileChooser();
+				int returnVal_exp = fc_exp.showSaveDialog(new JPanel());
+
+	            if (returnVal_exp == JFileChooser.APPROVE_OPTION) {
+	                File file = fc_exp.getSelectedFile();
+	                model.exportDatabase(file.getAbsolutePath());
+	                //This is where a real application would open the file.
+	            }
+				break;
+			case DB_Import:
+				JFileChooser fc_imp = new JFileChooser();
+				int returnVal_imp = fc_imp.showOpenDialog(new JPanel());
+
+	            if (returnVal_imp == JFileChooser.APPROVE_OPTION) {
+	                File file = fc_imp.getSelectedFile();
+	                model.replaceDatabase(file.getName(), file.getParentFile().getAbsolutePath());
+	                //This is where a real application would open the file.
+	            }
+	            break;
 			default:
 				break;
 		}
@@ -395,7 +424,6 @@ public class DefaultController implements Controller, TableModelListener, FocusL
 	 * Legt fest, was beim Ändern der Selektion eines Listenelemts passiert.
 	 * @param <ListSelectionModel>
 	 */
-	@Override
 	public void valueChanged(ListSelectionEvent e) {
 		if(view.getClass().equals(ConfigEditor.class)){
 			ListSelectionModel lsm = (ListSelectionModel)e.getSource();
@@ -450,7 +478,7 @@ public class DefaultController implements Controller, TableModelListener, FocusL
 		if(view.getClass()==UserEditor.class){
 			if(e.getSource().getClass()==JRadioButton.class){
 				model.setUserGroup_toEdit(AccessGroup.valueOf(( (Component) e.getSource()).getName()));
-				act(DCCommand.EditUsers, null);
+				try { act(DCCommand.EditUsers, null); } catch (PPException e1) {}
 			}
 			else if(e.getSource().getClass()==JCheckBox.class){
 			}
@@ -488,7 +516,7 @@ public class DefaultController implements Controller, TableModelListener, FocusL
 				else if(compName.equals("ProjectDescription"))
 					model.setProjectDescription(compValue);
 				else if(compName.equals("TabSize"))
-					model.setTabSize(Integer.parseInt(compValue));
+					model.setTabSize(compValue);
 				else if(compName.equals("ProjectName"))
 					model.setProjectName(compValue);
 				else if(compName.equals("Grade"))
@@ -503,6 +531,7 @@ public class DefaultController implements Controller, TableModelListener, FocusL
 			else if(e.getSource().getClass().equals(JComboBox.class))
 			{
 				if(compName.equals("AccessGroup")) {
+					@SuppressWarnings("unchecked")
 					JComboBox<String> jComboBox = (JComboBox<String>) e.getSource();
 					model.setStudentGroup((String) jComboBox.getSelectedItem());
 				}
@@ -547,46 +576,10 @@ public class DefaultController implements Controller, TableModelListener, FocusL
 		}		
 	}
 
-	@Override
 	public JView getView() {
 		return view;
 	}
-	
-	
-//	public void mouseClicked(MouseEvent e) {
-//		if(e.getButton()==MouseEvent.BUTTON3){
-//			if(e.getComponent().getName().equals("dropList")){
-//				//ListSelectionModel lsm= ((JList<String>) (e.getComponent())).getSelectionModel();
-//				//System.out.println(e.getComponent().getComponentAt(e.getLocationOnScreen()).getName());
-//				//System.out.println(e.getComponent().getComponentAt(e.getPoint()));
-//			}
-//		}
-//			
-//	}
-
-//	@Override
-//	public void propertyChange(PropertyChangeEvent evt) {
-//		if(view.getClass()==TextEditor.class){
-//			String componentName = ((Component) evt.getSource()).getName();
-//			String componentText = ((JTextComponent) evt.getSource()).getText();
-//			if(componentName!=null)
-//			{
-//				if(componentName.equals("ProjectName") 
-//						&& !componentText.equals(model.getProjectName()))
-//					unsavedChanges = true;
-//				else if(componentName.equals("ProjectCode")
-//						&& !componentText.equals(model.getProjectCode())
-//						&& !componentText.equals(TextEditor.defaultCode))
-//					unsavedChanges = true;
-//				else if(componentName.equals("TabSize")
-//						&& !componentText.equals(Integer.toString(model.getTabSize()))){
-//					unsavedChanges = true;
-//				}
-//				else if(componentName.equals("ProjectDescription")
-//						&& !componentText.equals(model.getProjectDescription()))
-//					unsavedChanges = true;
-//			System.out.println(componentName);
-//			}
-//		}	
-//	}
+	public Model getModel(){
+		return model;
+	}
 }

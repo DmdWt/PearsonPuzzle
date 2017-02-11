@@ -4,6 +4,8 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.util.Observable;
+
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JList;
 import javax.swing.JPanel;
@@ -36,8 +38,11 @@ public class TeacherView extends JView{
 		super(model);
 		
 		enter = new JButton("Projekt editieren");
+		enter.setIcon(new ImageIcon("rsc/icon/file/sheet.png"));
 		newProject = new JButton("Neues Projekt");
+		newProject.setIcon(new ImageIcon("rsc/icon/file/sheet_empty.png"));
 		delete = new JButton("Projekt löschen");
+		delete.setIcon(new ImageIcon("rsc/icon/file/delete.png"));
 		projectDescription = new JTextArea("Wählen Sie ein Projekt aus");
 		model.selectProject(null);
 		
@@ -45,7 +50,7 @@ public class TeacherView extends JView{
 		this.addMenuToFrame(menu);
 		
 		setupProjektList();
-		draw();
+		mainPanel.revalidate();
 	}
 	
 	/**

@@ -20,7 +20,6 @@ public class ExceptionController implements Controller{
 		view.setController(this);
 	}
 
-	@Override
 	public void actionPerformed(ActionEvent e) {
 		if(e.getActionCommand().equals(DCCommand.Save)){
 			model.saveUser(view.get("username"), view.get("password"), view.get("accessgroup"));
@@ -28,20 +27,21 @@ public class ExceptionController implements Controller{
 	}
 
 	
-	@Override
 	public void itemStateChanged(ItemEvent arg0) {
 		// TODO Auto-generated method stub
 		
 	}
-	@Override
 	public void valueChanged(ListSelectionEvent arg0) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	@Override
 	public JView getView() {
 		return view;
+	}
+	
+	public Model getModel(){
+		return model;
 	}
 
 }

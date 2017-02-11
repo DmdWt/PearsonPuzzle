@@ -1,13 +1,11 @@
 package view.teacher;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.util.Observable;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellRenderer;
 
 import controller.Controller;
 import controller.DCCommand;
@@ -16,7 +14,6 @@ import view.JView;
 import model.Model;
 
 public class ConfigEditor extends JView{
-
 	
 	private JButton save;
 	private JButton newGroup;
@@ -30,10 +27,10 @@ public class ConfigEditor extends JView{
 	
 	public ConfigEditor(Model model) {
 		super(model);
-		menu = new MenuTeacher(1);
+		menu = new MenuTeacher(model, 1);
 		this.addMenuToFrame(menu);
 		setupConfigPanel();
-		draw();
+		mainPanel.revalidate();
 	}
 	
 	private void setupConfigPanel(){
@@ -52,36 +49,32 @@ public class ConfigEditor extends JView{
 		editGroup_Buttons.setLayout(new BoxLayout(editGroup_Buttons, BoxLayout.Y_AXIS));
 		
 		newGroup = new JButton("<html><body style=\"text-align:center;\">Gruppe<BR>hinzufügen</body></html>");
+		newGroup.setIcon(new ImageIcon("rsc/icon/file/data_add.png"));
 		deleteGroup = new JButton("<html><body style=\"text-align:center;\">Gruppe<BR>löschen</body></html>");
+		deleteGroup.setIcon(new ImageIcon("rsc/icon/file/data_delete.png"));
 		editGroup = new JButton("<html><body style=\"text-align:center;\">Gruppe<BR>explizieren</body></html>");
-
-//		saveGroup= new JButton("<html><body style=\"text-align:center;\">Gruppe<BR>speichern</body></html>");
-//		saveGroup.setActionCommand(DCCommand.Save.toString());
-//		saveGroup.setEnabled(false);
-//		
+		editGroup.setIcon(new ImageIcon("rsc/icon/file/data_edit.png"));		
 				
 		editGroup_Buttons.add(newGroup);
-		editGroup_Buttons.add(new JLabel(" "));
-		//editGroup_Buttons.add(saveGroup);
-		editGroup_Buttons.add(deleteGroup);
 		editGroup_Buttons.add(editGroup);
+		editGroup_Buttons.add(deleteGroup);
+		
 		
 		JPanel testPhrase_Buttons = new JPanel();
 		testPhrase_Buttons.setLayout(new BoxLayout(testPhrase_Buttons, BoxLayout.Y_AXIS));
 		showHelp = new JButton("<html><body style=\"text-align:center;\">Hilfe<BR>anzeigen</body></html>");
-		JLabel helpField = new JLabel("<html><body><p>Der Testausdruck <br>sollte folgendermaßen<br> aufgebaut sein:</p></body></html>");
+		showHelp.setIcon(new ImageIcon("rsc/icon/file/help.png"));
 		editGroup_Buttons.add(new JLabel(" "));
 		editGroup_Buttons.add(showHelp);
-		//testPhrase_Buttons.add(showHelp);
-		//testPhrase_Buttons.add(helpField);
 		
 		JPanel save_Button = new JPanel();
-		save= new JButton("Änderungen Speichern");
+		save= new JButton();
+		save.setText("Speichern");
+		save.setIcon(saveIcon);
 		save_Button.add(save);
 
 		mainPanel.add(editGroup_Buttons, BorderLayout.WEST);
 		mainPanel.add(projectTable_SP, BorderLayout.CENTER);
-		//mainPanel.add(testPhrase_Buttons, BorderLayout.EAST);
 		mainPanel.add(save_Button, BorderLayout.SOUTH);
 	}
 	
@@ -89,14 +82,14 @@ public class ConfigEditor extends JView{
 		// Tabelle wird geleert
 		tableModel.setColumnCount(0);
 		// Tabelle wird neu aufgebaut
-		TableCellRenderer defaultRenderer = new TableCellRenderer() {
-			
-			public Component getTableCellRendererComponent(JTable arg0, Object arg1,
-					boolean arg2, boolean arg3, int arg4, int arg5) {
-				// TODO Auto-generated method stub
-				return null;
-			}
-		};
+		
+//		TableCellRenderer defaultRenderer = new TableCellRenderer() {	
+//			public Component getTableCellRendererComponent(JTable arg0, Object arg1,
+//					boolean arg2, boolean arg3, int arg4, int arg5) {
+//				// TODO Auto-generated method stub
+//				return null;
+//			}
+//		};
 		
 		if(model.getGroupMatrix()!=null && !model.getGroupMatrix().isEmpty())
 		{
@@ -112,7 +105,7 @@ public class ConfigEditor extends JView{
 			}	
 			
 		}
-		tableModel.addColumn("Codezeile", model.getCodeVector(null));
+		tableModel.addColumn("Codezeile", model.getCodeVector(false));
 		tableModel.addColumn("Testausdruck", model.getTestExpressionsVector());
 	}
 
@@ -120,8 +113,7 @@ public class ConfigEditor extends JView{
 	public void addController(Controller controller) {
 		menu.addActionListener(controller);
 //		sequenceList.getSelectionModel().addListSelectionListener(controller);
-//		codeList.getSelectionModel().addListSelectionListener(controller);	
-		
+//		codeList.getSelectionModel().addListSelectionListener(controller);		
 		newGroup.addActionListener(controller);
 		newGroup.setActionCommand(DCCommand.AddOrder.toString());
 		deleteGroup.addActionListener(controller);

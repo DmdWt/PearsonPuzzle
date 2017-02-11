@@ -152,6 +152,8 @@ public class AddUserDialog extends JDialog
 			message = ((PPException) arg).getMessage();
 		else if(arg.equals("username_unset"))
 			message = "Bitte geben Sie einen Nutzernamen an";
+		else if(arg.equals("username_noTable"))
+			message = "Für diese Nutzergruppe kann kein Nutzer angelegt werden.";
 		else if (arg.equals("password_unset"))
 			message = "Bitte geben Sie ein Passwort ein";
 		else if (arg.equals("accessgroup_unset"))

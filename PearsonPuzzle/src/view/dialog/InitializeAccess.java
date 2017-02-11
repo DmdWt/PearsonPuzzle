@@ -1,16 +1,11 @@
 package view.dialog;
 
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import java.util.LinkedHashMap;
 import java.util.Observable;
 
 import javax.swing.BoxLayout;
-import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
@@ -19,16 +14,14 @@ import model.Model;
 import model.access.AccessGroup;
 
 import controller.Controller;
-import controller.DCCommand;
 import view.JView;
-import view.PPException;
 
 public class InitializeAccess extends JView{
 	
-	private JPanel contentPanel;
-	private JDialog dialog;
+	//private JPanel contentPanel;
+	//private JDialog dialog;
 	private JPanel dialogPanel;
-	private JButton moreUsers;
+	//private JButton moreUsers;
 	private JPanel messagePanel;
 	private JTextField userName;
 	private JPasswordField password;
@@ -40,13 +33,13 @@ public class InitializeAccess extends JView{
 		setupDialogPanel();
 		//showDialog(PPException.noDatabaseExists,true);
 	}
-	private void setupDialog(){
-		dialog = new JDialog();
-		dialog.setModal(true);
-		dialog.setLayout(new FlowLayout());
-		dialog.setTitle("Nutzer Anlegen");
-		dialog.add(dialogPanel);
-	}
+//	private void setupDialog(){
+//		dialog = new JDialog();
+//		dialog.setModal(true);
+//		dialog.setLayout(new FlowLayout());
+//		dialog.setTitle("Nutzer Anlegen");
+//		dialog.add(dialogPanel);
+//	}
 	
 	private void setupDialogPanel(){
 		dialogPanel = new JPanel(new BorderLayout());
