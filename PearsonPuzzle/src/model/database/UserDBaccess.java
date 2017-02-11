@@ -3,16 +3,12 @@ package model.database;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Vector;
-
-import org.apache.derby.impl.load.Import;
 
 import view.PPException;
 
@@ -23,7 +19,7 @@ public class UserDBaccess {
 	 Connection conn;
 	 private final static int length_projectName = 36;
 	 private final static int length_projectDescription = 1024;
-	 private final static 	String dbUrl = "jdbc:derby:database;create=true";
+	 private final static String dbUrl = "jdbc:derby:database;create=true";
 	 public UserDBaccess() throws SQLException {
 		conn = DriverManager.getConnection(dbUrl);
 		//derby.ui.codeset
@@ -54,8 +50,9 @@ public class UserDBaccess {
 			System.out.println("success");
 		   return true;}
 		   catch(SQLException e){	//username bereits vorhanden => false (falls handling erforderlich)
+			   
 			   if(e.getSQLState().equals("23505")){ // The statement was aborted because it would have caused a 
-				   // duplicate key value in a unique or primary key constraint or unique index identified by '<value>' defined on '<value>'.	   
+				   PPException exception = new PPException("Suau dummer Fehler");// duplicate key value in a unique or primary key constraint or unique index identified by '<value>' defined on '<value>'.	   
 				   return false;
 			   }
 			   e.printStackTrace();
@@ -207,14 +204,14 @@ public class UserDBaccess {
 		   //FIXME imports länge = 100 ändern
 		   try{
 			   stmt.executeUpdate("CREATE TABLE Projects ( " +
-					   "pName varchar("+length_projectName+") UNIQUE, " +
-				   		"randomName varchar(15) UNIQUE, " +				     
-				   		"description varchar("+length_projectDescription+"), " +				     
-				   		"jUnitCode varchar(1000), " +				     
-				   		"onlineImports varchar(100), " +				     
-				   		"localImports varchar(1500), " +				     
-				   		"methods varchar(1000), " +				     
-				   		"puzzlemode INT, " +
+				   		"pName varchar("+length_projectName+") UNIQUE, " + 
+					    "randomName varchar(15) UNIQUE"+
+				   		"description varchar("+length_projectDescription+"), " +
+				   		"jUnitCode varchar(1000),"+
+				   		"onlineImports varchar(100),"+
+				   		"localImports varchar(1500),"+
+				   		"methods varchar(1000),"+
+				   		"puzzlemode INT,"+
 				   		"tabSize INT)");
 		   }
 		   catch(Exception e){ //Tabelle existiert bereits
@@ -229,7 +226,6 @@ public class UserDBaccess {
 		   		+ ""+tabsize+")");
 		   // Project wird in neuer Tabelle abgespeichert
 		   createProject(randomname, codeString, randomKeys, linelength);
-		   
 		   }
 		   catch(SQLException e){	
 			   //Projektname bereits vorhanden => Projekt wird aktualisiert
@@ -246,11 +242,6 @@ public class UserDBaccess {
 					   		);
 				   createProject(randomname, codeString, randomKeys, linelength);
 		   }
-			   try{
-				   createOrderfailurMassage(randomname+"ORDERFAILURE");
-			   }catch(Exception e2){
-				   //TODO:besseres exceptionhandling (Table allready exists)
-			   }
 			   //e.printStackTrace();
 		   }
 		   
@@ -285,7 +276,7 @@ public class UserDBaccess {
 				   
 			   stmt.execute("CREATE TABLE "+randomName+" ( " +
 				   		"lineKey int PRIMARY KEY, " +	
-				   		"codeLine varchar("+ Math.max(linelength,200)+"), " +	
+				   		"codeLine varchar("+Math.max(linelength,150)+"), " +	
 				   		"randomKey int)");
 
 			   
@@ -296,7 +287,7 @@ public class UserDBaccess {
 				   		+ ""+randomKeys.get(i).intValue()+")");
 			   }
 		   }
-		   catch(SQLException e){ e.printStackTrace();
+		   catch(SQLException e){
 			   				   return;
 				   }
 	
@@ -496,13 +487,13 @@ public class UserDBaccess {
 //		   return codeString.toArray(new String[0]);
 //	   }
 	   	   
-	   public Vector<Integer> getRandomKeys(String randomname){
+	   public Vector<Integer> getRandomKeys(String projectname){
 		   Vector<Integer> randomKeys = new Vector<Integer>();
 		   Statement stmt;
 		try {
 			stmt = conn.createStatement();
 		
-		   ResultSet rk = stmt.executeQuery("SELECT randomKey FROM "+randomname);
+		   ResultSet rk = stmt.executeQuery("SELECT randomKey FROM "+projectname);
 		  
 		   while(rk.next()){
 			   randomKeys.add(rk.getInt("randomKey"));
@@ -515,7 +506,6 @@ public class UserDBaccess {
 			return randomKeys;
 		}
 	   }
-	   
 	   public boolean setRandomKeys(String randomname, ArrayList<Integer> randomKeys){
 		   try{
 			   Statement stmt = conn.createStatement();
@@ -530,7 +520,6 @@ public class UserDBaccess {
 			   }
 		   return false;
 	   }
-	   
 	   
 	   public ArrayList <String> getCodeList(String randomName) throws SQLException{
 		   //System.out.println("getcodelist");
@@ -564,10 +553,7 @@ public class UserDBaccess {
 				   stmt.executeUpdate("ALTER TABLE "+randomName+" ADD COLUMN order_"+i+" int");
 				   success = true;
 				   ordernumber=i;
-			   }catch(Exception e){
-				   //TODO: besseres Exception handling (table already exists)
-				  
-			   }
+			   }catch(Exception e){}
 			}
 			
 			for(int j = 0; j < neworder.size();j++){
@@ -578,7 +564,6 @@ public class UserDBaccess {
 			   }
 			
 		} 	catch (SQLException e1) {
-			// FIXME: für den Import muss hier die Exception abgefangen werden, das bei 'Update randomname' ein zu kleiner Vektor übergeben wurde.
 				// TODO Auto-generated catch block
 			System.out.println("es gab ein Problem bei addOrder.");
 				e1.printStackTrace();
@@ -621,18 +606,18 @@ public class UserDBaccess {
 	   }
 	   
 	   public boolean doesOrderExist(String randomName, int ordernumber){
-				   try{
-					   Statement stmt = conn.createStatement();
-					   ResultSet rs = stmt.executeQuery("SELECT order_"+ordernumber+" FROM "+randomName+" ");
-					   return rs.next();
-				   }catch(SQLException e){if(e.getSQLState().equals("42X04")){
-					   return false;
-				   }
-					   e.printStackTrace();
-					   return false;
-				   }
-				
-	   }
+		   try{
+			   Statement stmt = conn.createStatement();
+			   ResultSet rs = stmt.executeQuery("SELECT order_"+ordernumber+" FROM "+randomName+" ");
+			   return rs.next();
+		   }catch(SQLException e){if(e.getSQLState().equals("42X04")){
+			   return false;
+		   }
+			   e.printStackTrace();
+			   return false;
+		   }
+		
+}
 	   
 	   
 	   /**
@@ -710,13 +695,15 @@ public class UserDBaccess {
 					   stmt.executeUpdate("DROP TABLE "+randomname+"ORDERFAILURE");
 				   }
 			   }
-			   
-			   
 		   }
+		   
 		   catch(SQLException e){
-			   if(e.getSQLState().equals("XCL16")|| // while-Schleife wurde verlassen ( Error: ResultSet not open. Operation '<operation>' not permitted. Verify that autocommit is OFF.)
-				  e.getSQLState().equals("42X05") || e.getSQLState().equals("42Y55"))// Table/View '<objectName>' does not exist.
-				   {}
+			   if(e.getSQLState().equals("XCL16")) // while-Schleife wurde verlassen ( Error: ResultSet not open. Operation '<operation>' not permitted. Verify that autocommit is OFF.)
+			   { }
+			   else if(e.getSQLState().equals("42X05"))
+			   {}
+			   else if(e.getSQLState().equals("X0X95")) // Operation 'DROP TABLE' cannot be performed on object 'FZYGHSESUKYPEVN' because there is an open ResultSet dependent on that object
+			   {}
 			   else e.printStackTrace();}
 		   
 		   try{
@@ -724,7 +711,9 @@ public class UserDBaccess {
 			   stmt.executeUpdate("DROP TABLE Projects");
 		   }catch(SQLException e){
 			   if(e.getSQLState().equals("42Y55")) // Tabelle Projects existiert nicht (Error: '<value>' cannot be performed on '<value>' because it does not exist.)
-			   { }
+			   {}
+			   else if(e.getSQLState().equals("42X05")) // Table/View 'PROJECTS' does not exist.
+			   {}
 			   else e.printStackTrace();
 		   }
 		   
@@ -732,12 +721,12 @@ public class UserDBaccess {
 		   stmt.executeUpdate("CREATE TABLE Projects ( " +
 				   "pName varchar("+length_projectName+") UNIQUE, " +
 			   		"randomName varchar(15) UNIQUE, " +				     
-			   		"description varchar("+length_projectDescription+"), " +				     
-			   		"jUnitCode varchar(1000), " +				     
-			   		"onlineImports varchar(100), " +				     
-			   		"localImports varchar(1500), " +				     
-			   		"methods varchar(1000), " +				     
-			   		"puzzlemode INT, " +
+			   		"description varchar("+length_projectDescription+"), " +
+			   		"jUnitCode varchar(1000),"+
+			   		"onlineImports varchar(100),"+
+			   		"localImports varchar(1500),"+
+			   		"methods varchar(1000),"+
+			   		"puzzlemode INT,"+
 			   		"tabSize INT)");
 //		   		"pName varchar("+length_projectName+") UNIQUE, " +   		
 //		   		"imports varchar(100) , " +  
@@ -745,8 +734,26 @@ public class UserDBaccess {
 //		   		"tabSize INT)");
 		   
 		   //stmt.close();
-
 	   }
+//	   protected void recreateTable_Projects() throws SQLException{
+//		   Statement stmt = conn.createStatement();
+//		   // TODO: Allert soll erfolgen, der abfrägt, ob dies das erst Projekt ist, das man erstellt. Erst bei ja soll DROP TABLE erfolgen (sonst werden eventuell vorhandenen DAten verworfen)
+//		   try{stmt.executeUpdate("DROP TABLE Projects");
+//		   //stmt.close();
+//		   }
+//		   catch(SQLException e){}
+//		   stmt.executeUpdate("CREATE TABLE Projects ( " +
+//				   "pName varchar("+length_projectName+") UNIQUE, " +
+//			   		"randomName varchar(15) UNIQUE, " +				     
+//			   		"description varchar("+length_projectDescription+"), " +
+//			   		"tabSize INT)");
+////		   		"pName varchar("+length_projectName+") UNIQUE, " +   		
+////		   		"imports varchar(100) , " +  
+////		   		"description varchar("+length_projectDescription+"), " +
+////		   		"tabSize INT)");
+//		   
+//		   //stmt.close();
+//	   }
 	   
 	   protected void createTable(AccessGroup accessGroup) throws SQLException{
 		   Statement stmt = conn.createStatement();
@@ -915,10 +922,9 @@ public class UserDBaccess {
 	   
 	   public Vector<String> getRandomNames() throws SQLException {
 		    Statement stmt = conn.createStatement();
-			ResultSet rs=stmt.executeQuery("SELECT randomName,pName FROM Projects");
+			ResultSet rs=stmt.executeQuery("SELECT randomName FROM Projects");
 			Vector<String> randomNames = new Vector<String>();
 			while(rs.next()){
-				randomNames.add(rs.getString("pName"));
 				randomNames.add(rs.getString("randomName"));
 			}
 			return randomNames;
@@ -962,6 +968,7 @@ public class UserDBaccess {
 	   		}			
 	}
 	
+	
 	public void createOrderfailurMassage(String failurname) throws SQLException {
 		try{
 			Statement stmt = conn.createStatement();
@@ -984,7 +991,7 @@ public class UserDBaccess {
 			   e.printStackTrace();
 			   
 		   }
-		try { 
+		try {
 			Statement stmt = conn.createStatement();
 			stmt.executeUpdate("INSERT INTO "+failurname+" (ordernumber, failurmassage) values ("+ordernumber+",'"+massage+"')");
 		   return true;}
@@ -1041,16 +1048,36 @@ public class UserDBaccess {
 		   return te.getString("failurmassage");
 		   } catch (SQLException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				//e.printStackTrace();
 				return "";
 			}
 	}
 	
+	public int countOrders(String randomname){
+		int ordercount = 0;
+			Statement stmt;
+		    ResultSet te;
+		if(doesTableExist(randomname+"ORDERFAILURE")){
+			try{
+				stmt=conn.createStatement();
+				te=stmt.executeQuery("SELECT ordernumber FROM "+randomname+"ORDERFAILURE"+" ");
+				while(te.next()) ordercount++;
+			}catch(SQLException e){
+				if(e.getSQLState().equals("XCL16")) // while-Schleife wurde verlassen ( Error: ResultSet not open. Operation '<operation>' not permitted. Verify that autocommit is OFF.)
+				   { }
+				else{
+					e.printStackTrace();
+				}
+			}
+		}
+		return ordercount;
+	}
 	
+	//----------------------------------------------- doesTableexist? ------------------------
+
 	public boolean doesTableExist(String tablename){
 		try{
 		Statement stmt = conn.createStatement();
-		System.out.println(tablename);
 		stmt.executeQuery("SELECT * FROM "+tablename+"");
 		return true;
 		}catch(SQLException e){
@@ -1064,17 +1091,6 @@ public class UserDBaccess {
 	}
 	
 	
-	public int countOrders(String randomname){
-		int number = 0;
-		for(int index = 1; doesOrderExist(randomname,index-1); index++){
-			number=index;
-		}
-			return number;
-		}
-		
-		
-	
-	
 	//---------------------------------------------------Export-Import------------------------------
 	
 	
@@ -1084,28 +1100,21 @@ public class UserDBaccess {
     	if(!folder.exists()){
     		folder.mkdir();
     	}
-    	String lokTableName = tablename;
-    	if (tablename.length()==16)
-        	lokTableName = tablename.substring(1,16);
-    	if (tablename.length()==17)
-        	lokTableName = tablename.substring(2,17);
-        	
-//    	// Anzahl der Reihenfolgen bestimmen & an den outputnamen anhängen
-//    	if(tablename.length()==15){
-//    		int orderCount= countOrders(tablename);
-//    		tablename = orderCount + tablename;
-//    		System.out.println(tablename);
-//    	}
+
 		
-		// SYSCS_EXPORT_TABLE akzeptiert nur Tabellennamen in UpperCase. 
+    	// SYSCS_EXPORT_TABLE akzeptiert nur Tabellennamen in UpperCase. 
 		String tablenameUC = tablename.toUpperCase();
-    	String lokTableNameUC = lokTableName.toUpperCase();
 		
+		//Anzahl der Reihenfolgen abspeichern & an projektnamen anhängen.
+    	if(tablename.length()==15){
+    		tablename=tablename+countOrders(tablename);
+    		System.out.println(tablename);
+    	}
 		
 		Statement stmt;
 			try {
 				stmt = conn.createStatement();
-				stmt.execute("CALL SYSCS_UTIL.SYSCS_EXPORT_TABLE (null, '"+lokTableNameUC+"', '" + diskplace + File.separator + tablename + ".dat"+ "', '%', null, null)");
+				stmt.execute("CALL SYSCS_UTIL.SYSCS_EXPORT_TABLE (null, '"+tablenameUC+"', '" + diskplace + File.separator + tablename + ".dat"+ "', '%', null, null)");
 			    return true;
 			} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -1117,14 +1126,15 @@ public class UserDBaccess {
 	
 	
 	public boolean importTable(String tablename, String diskplace){
-		try {
-				conn.close();
-		} catch (SQLException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		
+		try{
+			conn.close();
+		} catch(SQLException e1){e1.printStackTrace();}
 	String tablenameUC = tablename.toUpperCase();
+	
+	// Reihenfolgenanzahl von Projekttabellen entfernen
+	if(tablenameUC.length()==16||tablenameUC.length()==17){
+		tablenameUC=tablenameUC.substring(0, 15);
+	}
 	Statement stmt;
 	try {
 		conn = DriverManager.getConnection(dbUrl);
@@ -1137,44 +1147,12 @@ public class UserDBaccess {
 	    return true;
 	} catch (SQLException e) {
 	// TODO Auto-generated catch block
-		e.getCause();
-//	e.printStackTrace();
+	e.printStackTrace();
 	return false;
 	}
-}
-	
-
-	
-	
-	//möglicherweise performatntere Implementierung
-	
-//	public boolean export(String tablename, String diskplace){
-//	// SYSCS_EXPORT_TABLE akzeptiert nur Tabellennamen in UpperCase. 
-//	String tablenameUC = tablename.toUpperCase();
-//	
-//	
-//		java.sql.PreparedStatement ps;
-//			try {
-//				ps = conn.prepareStatement("CALL SYSCS_UTIL.SYSCS_EXPORT_TABLE (?,?,?,?,?,?)");
-//			    ps.setString(1,null);
-//			    ps.setString(2,tablenameUC);
-//			    ps.setString(3,diskplace+ File.separator+tablename+".dat");
-//			    ps.setString(4,"%");
-//			    ps.setString(5,null);
-//			    ps.setString(6,null);
-//			    ps.execute();
-//			    return true;
-//			} catch (SQLException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//			return false;
-//			}
-//		}
-//	
-	
+}	
 	public void refreshConnection() throws SQLException{
 		conn.close();
 		conn = DriverManager.getConnection(dbUrl);
 	}
-	
 }

@@ -27,15 +27,11 @@ public class dbTransaction implements Transaction{
 	 
 	private UserDBaccess userDBaccess;
 	private Model model;
-	private App app;
 	
 	public dbTransaction(Model model) throws PPException{
 		this.model=model;
 		try {
 			userDBaccess = new UserDBaccess();
-			app = new App();
-//			exportAll("C:\\java\\outputfolder");
-			replaceDb("exportdatei.zip","C:\\java\\outputfolder");
 			//userDBaccess.resetAll();
 		} catch (SQLException e) {
 			if(((SQLException) e).getSQLState().equals("XJ040")){ // Failed to start database '<databaseName>', see the next exception for details.
@@ -53,14 +49,8 @@ public class dbTransaction implements Transaction{
 			else{
 				e.printStackTrace();
 			}
-			
 		}
-
 	}
-	
-
-	
-	
 	
 	
 	
@@ -107,7 +97,7 @@ public class dbTransaction implements Transaction{
 		 return userDBaccess.getNames(table);
 	}
 		
-	//gibt alle namen von Lehrern und Schülern aus 
+	//gibt alle namen von Lehrern und Schülern aus
 	public Vector<String> getAllNames(){
 		 Vector<String> namevector = userDBaccess.getNames("teachers");
 		 namevector.addAll(userDBaccess.getNames("students"));
@@ -230,7 +220,7 @@ public class dbTransaction implements Transaction{
 		   for (int j=0; j<length; j++) {
 		     Randomname = Randomname + (char) ('a' + 26*Math.random());  // 'a' + (0..23) = ('a' .. 'z')
 		   }
-		   Randomname=Randomname.toUpperCase();
+		   Randomname = Randomname.toUpperCase();
 		   alreadyexists=userDBaccess.doesRandomnameExist(Randomname);
 		}
 		return Randomname;
@@ -259,7 +249,7 @@ public class dbTransaction implements Transaction{
 	}
 	
 	public void saveProject(String projectname, String codeString, String onlineimports, String localimports,
-			String description, int tab) {
+			String description, int tab, Vector<Integer> lineOrder) {
 		   // TODO: Linelength umdefinieren (wird nicht zwingend benötigt, übergebene Integer kann aber evtl. Verwendung finden
 		String[] codeStrings=codeString.split("\n");
 		
@@ -290,7 +280,19 @@ public class dbTransaction implements Transaction{
 		   
 		   // -- Code Array wird erzeugt und wieder zu einem String zusammengefasst
 		   codeString = unite(codeStrings, false, tab);
-		   ArrayList<Integer> randomKey = getRandomKeys(codeStrings.length);
+		   
+		   // -- Eine zufällige Abfolge von Zahlen wird für die Sortierung der Zeilen hinterlegt.
+		   ArrayList<Integer> randomKey = null;
+		   if(lineOrder == null || lineOrder.size()!=codeStrings.length){
+			   randomKey = getRandomKeys(codeStrings.length);
+		   }
+		   else{
+			   randomKey = new ArrayList<Integer>(codeStrings.length);
+			   for(Integer key: lineOrder){
+				   randomKey.add(key);
+			   }
+		   }
+		   
 		   try {
 			//userDBaccess.saveProject(projectname, codeStrings, imports, description, randomKey, tab, linelength); 13.01.2017
 			   userDBaccess.saveProject(projectname, createRandomString(15), codeStrings, description, randomKey,
@@ -345,19 +347,11 @@ public class dbTransaction implements Transaction{
 	}
 	
 	public Vector<Integer> getRandomKeys(String projectname){
-		String randomname = getRandomName(projectname); //13.1.2017 
-		return userDBaccess.getRandomKeys(randomname);
+		projectname = getRandomName(projectname); //13.1.2017 
+		return userDBaccess.getRandomKeys(projectname);
 	}
 	
-	public boolean resetRandomKeys(String projectname){
-		String randomname = getRandomName(projectname);
-		Vector<Integer> oldrandomKeys = getRandomKeys(projectname);
-		ArrayList<Integer> newrandomKeys=getRandomKeys(oldrandomKeys.size());
-		return userDBaccess.setRandomKeys(randomname, newrandomKeys);
-	}
-	
-	
-	public boolean setRandomKeys(String projectname, LinkedList<Integer> randomKeys){
+	public boolean setRandomKeys(String projectname, LinkedList<Integer> sortedKeys){
 		String randomname=new String()	;
 		try {
 			randomname = userDBaccess.getRandomName(projectname);
@@ -365,8 +359,31 @@ public class dbTransaction implements Transaction{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		ArrayList<Integer> newrandomKeys= new ArrayList<Integer>(randomKeys);
-		return userDBaccess.setRandomKeys(randomname, newrandomKeys);
+
+		ArrayList<Integer> permutation = new ArrayList<Integer>(sortedKeys.size());
+		permutation.addAll(sortedKeys);
+		for(Integer indexInNormalCode : sortedKeys){
+			permutation.set(indexInNormalCode, sortedKeys.indexOf(indexInNormalCode));
+		}
+//		Vector<Integer> originalRandomKeys = userDBaccess.getRandomKeys(randomname);
+//		Vector<Integer> randomKeys = new Vector<Integer>(sortedKeys.size());
+//		try{
+//			for(Integer index: sortedKeys){
+//				randomKeys.add(0);
+//			}
+//			for(Integer index: sortedKeys){
+//				randomKeys.set(index, originalRandomKeys.get(index));
+//			}
+//			
+//		} catch(Exception e){
+//			e.printStackTrace();
+//			return false;
+//		}
+		
+		
+		//ArrayList<Integer> newrandomKeys= new ArrayList<Integer>(sortedKeys);
+		//return userDBaccess.setRandomKeys(randomname, newrandomKeys);
+		return userDBaccess.setRandomKeys(randomname, permutation);
 	}
 	
 	private ArrayList<Integer> getRandomKeys(int number){
@@ -622,13 +639,10 @@ public class dbTransaction implements Transaction{
 		return OrderFailureText;
 	}
 	
-	
-	
-	
+
 	public boolean exportAll(String diskplace){
 		// Ein Vector wird mit den Namen aller existierenden Tabellen gefüllt
 		String randomname = new String();
-		int orderCount = 0;
 		ArrayList<String> ProjectList = getProjects(0);
 		Vector<String> TableVector = new Vector<String>();
 		TableVector.add("projects");
@@ -637,8 +651,8 @@ public class dbTransaction implements Transaction{
 		try {
 			for(int index=0; index < ProjectList.size(); index++){
 				randomname=userDBaccess.getRandomName(ProjectList.get(index));
-				orderCount = userDBaccess.countOrders(randomname);
-				TableVector.add(orderCount+randomname);
+				
+				TableVector.add(randomname);
 				if(userDBaccess.doesTableExist(randomname+"ORDERFAILURE")){
 					TableVector.add(randomname+"ORDERFAILURE");
 				}
@@ -651,76 +665,66 @@ public class dbTransaction implements Transaction{
 		
 		return export(TableVector, diskplace);
 	}
-	
-	
-	
+
 	
 	public boolean export(Vector<String> projectnames, String diskplace){
 		Vector<String> fileVector = new Vector<String>();
+		String diskfolder = new String();
+		String[] diskplacepieces = diskplace.split("\\"+File.separator);
+		for(int i=0; i<diskplacepieces.length-1;i++){
+			diskfolder = diskfolder+File.separator+diskplacepieces[i];	
+		}
 		
 		for(int index=0; index <projectnames.size();index++){	
 		String tablename = projectnames.get(index);
-		fileVector.add(tablename+".dat");
-		userDBaccess.exportTable(tablename, diskplace);
+		userDBaccess.exportTable(tablename, diskfolder);
+		if(tablename.length()==15){
+			tablename=tablename+userDBaccess.countOrders(tablename);
 		}
-		return App.zipIt(fileVector, diskplace);
+		fileVector.add(tablename+".dat");
+		}
+		return ZipApp.zipIt(fileVector, diskplace);
 	}
 	
 	public void replaceDb(String importfile, String diskplace){
 		try {
+			userDBaccess.refreshConnection();
 			userDBaccess.resetAll();
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
-		//befüllen fe
 		String fileName = new String();
 		String tableName = new String();
-		String existTableName = new String();
 		String[] codeString = new String[0];
 		ArrayList<Integer> randomKeys = new ArrayList<Integer>();
-		Vector<String> dataNames = app.unZipIt(importfile, diskplace);
+		int ordercount;
 		
-		
+		//
+		Vector<String> dataNames = ZipApp.unZipIt(importfile, diskplace);
 		for(int index =0;index < dataNames.size(); index++){
 			fileName=dataNames.get(index);
 			tableName=fileName.substring(0,fileName.length()-4);
-			existTableName = tableName;
-			if(existTableName.length()==16)	existTableName = existTableName.substring(1, 16);
-			if(existTableName.length()==17)	existTableName = existTableName.substring(2, 17);
-			
-			
-			if(userDBaccess.doesTableExist(existTableName)){ 
-				userDBaccess.importTable(existTableName, diskplace);
-			}else{	if(tableName.length()==16){									//case1: eine Project-tabelle (0-9 Reihenfolgen)
-						int orderCount = Integer.parseInt(tableName.substring(0,1));
+			if(userDBaccess.doesTableExist(tableName)){ 
+				userDBaccess.importTable(tableName, diskplace);
+			}else{	if(tableName.length()==16 || tableName.length()==17){									//case1: eine Project-tabelle
+						ordercount = Integer.parseInt(tableName.substring(15));
+						String realtableName = tableName.substring(0, 15);
+						userDBaccess.createProject(realtableName, codeString, randomKeys, 0);
+						for(int ord=0; ord<ordercount;ord++){
+							userDBaccess.addOrder(realtableName, new Vector<Integer>());}
 						
-						System.out.println(existTableName);
-						Vector<Vector<Integer>>orderCountVector=new Vector<Vector<Integer>>(orderCount);
-						for(Vector<Integer> orderVector : orderCountVector){
-							userDBaccess.addOrder(existTableName, orderVector);
 						}
-						
-						userDBaccess.createProject(existTableName, codeString, randomKeys, 0);}
-			else{	
-				if(tableName.length()==17){									//case1: eine Project-tabelle (10-99 Reihenfolgen)
-						int orderCount = Integer.parseInt(tableName.substring(0,2));
-						Vector<Vector<Integer>>orderCountVector=new Vector<Vector<Integer>>(orderCount);
-						//anlegen der nötigen reihenfolgenspalten
-						for(Vector<Integer> orderVector : orderCountVector){
-							userDBaccess.addOrder(existTableName, orderVector);
-							}
-						userDBaccess.createProject(existTableName, codeString, randomKeys, 0);}
-					else{														//case2: eine Orderfailre-tabelle
+					else{														//case1: eine Orderfailre-tabelle
 						try {
 							userDBaccess.createOrderfailurMassage(tableName);
 						} catch (SQLException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
-					}}
-				userDBaccess.importTable(existTableName, diskplace);
+					}
+				userDBaccess.importTable(tableName, diskplace);
 			}
 			
 			//datei löschen
@@ -728,9 +732,5 @@ public class dbTransaction implements Transaction{
 			file.delete();
 		}
 		
-	}
-	
-	
-	
-	
+	}	
 }
